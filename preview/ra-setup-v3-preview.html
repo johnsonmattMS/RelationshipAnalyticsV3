@@ -1,0 +1,953 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Relationship Analytics Setup V3 - Preview</title>
+<style>
+  :root{
+    --bg:#f3f2f1; --panel:#ffffff; --border:#e1dfdd; --border-strong:#c8c6c4;
+    --text:#201f1e; --subtle:#605e5c; --brand:#0f6cbd; --brand-hover:#115ea3;
+    --danger:#a4262c; --success:#107c10; --warn:#8a6d00;
+    --chip:#f3f2f1; --chip-hover:#edebe9;
+    --shadow:0 6.4px 14.4px rgba(0,0,0,.13), 0 1.2px 3.6px rgba(0,0,0,.10);
+    --radius:6px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);font:14px/1.45 "Segoe UI",system-ui,sans-serif;color:var(--text)}
+
+  /* Stage just for the preview page */
+  .stage{min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:28px 24px 60px}
+  .stage-note{position:fixed;top:10px;left:12px;font-size:12px;color:var(--subtle);background:#fff;border:1px solid var(--border);padding:4px 8px;border-radius:4px;box-shadow:var(--shadow)}
+
+  /* Modal chrome (mimics Xrm.Navigation.navigateTo target:2) */
+  .modal{width:1000px;max-width:100%;background:var(--panel);border-radius:var(--radius);box-shadow:var(--shadow);display:flex;flex-direction:column;overflow:hidden}
+  .modal header{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid var(--border)}
+  .modal header .title{flex:1}
+  .modal header h1{font-size:16px;margin:0}
+  .modal header .sub{color:var(--subtle);font-size:12.5px;margin-top:2px}
+  .modal header .icon{width:28px;height:28px;border-radius:4px;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700}
+  .modal header .icon svg{width:18px;height:18px;display:block}
+  .modal header .close{border:none;background:transparent;font-size:18px;color:var(--subtle);cursor:pointer;padding:4px 8px;border-radius:3px}
+  .modal header .close:hover{background:var(--chip-hover);color:var(--text)}
+
+  /* Tabs */
+  .tabs{display:flex;gap:2px;border-bottom:1px solid var(--border);padding:0 12px;overflow-x:auto;background:#fafafa}
+  .tab{padding:12px 14px;font-weight:600;color:var(--subtle);border:none;background:transparent;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
+  .tab:hover{color:var(--text)}
+  .tab.active{color:var(--brand);border-bottom-color:var(--brand)}
+  .tab[disabled]{color:#a19f9d;cursor:not-allowed}
+  .tab .pill{display:inline-block;font-size:10.5px;font-weight:700;background:#eff6fc;color:var(--brand);padding:1px 6px;border-radius:10px;margin-left:6px;vertical-align:1px}
+  .tab[disabled] .pill{background:var(--chip);color:var(--subtle)}
+
+  /* Body */
+  .body{flex:1;overflow:auto;padding:18px 20px;min-height:420px;max-height:540px}
+  .intro{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:12px}
+  .intro h2{font-size:15px;margin:0}
+  .intro .hint{color:var(--subtle);font-size:12.5px;max-width:560px}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap}
+
+  /* Footer */
+  .foot{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 20px;border-top:1px solid var(--border);background:#fafafa}
+  .foot .status{color:var(--subtle);font-size:12.5px}
+  .foot .actions{display:flex;gap:8px}
+
+  /* Buttons */
+  button.btn{font:inherit;border-radius:4px;padding:7px 14px;cursor:pointer;border:1px solid var(--border-strong);background:var(--panel);color:var(--text)}
+  button.btn:hover{background:var(--chip-hover)}
+  button.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+  button.btn.primary:hover{background:var(--brand-hover);border-color:var(--brand-hover)}
+  button.btn.ghost{border-color:transparent;background:transparent;color:var(--brand)}
+  button.btn.danger{color:var(--danger);border-color:transparent;background:transparent;padding:4px 6px}
+  button.btn.danger:hover{background:#fde7e9}
+  button.btn.sm{padding:4px 10px;font-size:12.5px}
+
+  /* Rows (score reasons) */
+  .rows{display:flex;flex-direction:column;gap:6px}
+  .rowhdr,.row{display:grid;grid-template-columns:110px 1fr 1fr 32px;gap:10px;align-items:center}
+  .rowhdr{padding:6px 10px;font-size:12px;color:var(--subtle);font-weight:600;text-transform:uppercase;letter-spacing:.3px}
+  .row{background:#fbfafa;border:1px solid var(--border);border-radius:4px;padding:8px 10px}
+  .row input[type=text]{width:100%;border:1px solid var(--border);border-radius:3px;padding:6px 8px;background:#fff;font:inherit}
+  .row input[type=text]:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 1px var(--brand)}
+  .influence{display:flex;align-items:center;gap:8px}
+  .switch{position:relative;display:inline-block;width:34px;height:18px}
+  .switch input{opacity:0;width:0;height:0}
+  .slider{position:absolute;inset:0;background:#c8c6c4;border-radius:18px;cursor:pointer;transition:.15s}
+  .slider::before{content:"";position:absolute;width:14px;height:14px;left:2px;top:2px;background:#fff;border-radius:50%;transition:.15s}
+  .switch input:checked + .slider{background:var(--success)}
+  .switch input:checked + .slider::before{transform:translateX(16px)}
+  .influence .lbl{font-size:12.5px;color:var(--subtle);min-width:52px}
+  .influence input:checked ~ .lbl{color:var(--success);font-weight:600}
+  .influence .neg{color:var(--subtle)}
+
+  .empty{border:1px dashed var(--border-strong);border-radius:4px;padding:28px;text-align:center;color:var(--subtle)}
+
+  /* Score header block */
+  .scorehead{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;padding:14px;background:#fbfafa;border:1px solid var(--border);border-radius:4px}
+  .fld{display:flex;flex-direction:column;gap:4px}
+  .fld label{font-size:11.5px;color:var(--subtle);text-transform:uppercase;letter-spacing:.3px;font-weight:600}
+  .fld input,.fld select{border:1px solid var(--border);border-radius:3px;padding:6px 8px;background:#fff;font:inherit}
+  .fld input:focus,.fld select:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 1px var(--brand)}
+  .fld .score-wrap{display:flex;align-items:center;gap:8px}
+  .fld .score-wrap input{flex:1}
+  .fld .grade{font-weight:700;color:var(--brand);min-width:56px;text-align:center;font-size:12.5px;white-space:nowrap}
+  .trend{display:flex;gap:4px}
+  .trend button{flex:1;border:1px solid var(--border);background:#fff;border-radius:3px;padding:6px;cursor:pointer;font:inherit;color:var(--subtle)}
+  .trend button.on{background:var(--brand);border-color:var(--brand);color:#fff}
+
+  /* Stub panes */
+  /* Most contacted grid */
+  .mc-group{margin-bottom:18px}
+  .mc-group h3{font-size:13px;margin:0 0 6px;color:var(--text)}
+  .mc-group .sub{font-size:12px;color:var(--subtle);margin-bottom:8px}
+  .mc-hdr,.mc-row{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr 32px;gap:8px;align-items:center}
+  .mc-hdr{padding:4px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.3px;color:var(--subtle);font-weight:600}
+  .mc-row{background:#fbfafa;border:1px solid var(--border);border-radius:4px;padding:8px 10px;margin-bottom:6px}
+  .mc-row input{border:1px solid var(--border);border-radius:3px;padding:6px 8px;background:#fff;font:inherit;width:100%}
+  .mc-row input:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 1px var(--brand)}
+  .name-wrap{display:flex;align-items:center;gap:8px}
+  .name-wrap .avatar{width:28px;height:28px;border-radius:50%;background:#2b8a78;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:11px;flex-shrink:0}
+
+  /* Day KPIs */
+  .dk-hdr,.dk-row{display:grid;grid-template-columns:110px repeat(7, 1fr) 32px;gap:6px;align-items:center}
+  .dk-hdr{padding:4px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.3px;color:var(--subtle);font-weight:600}
+  .dk-row{background:#fbfafa;border:1px solid var(--border);border-radius:4px;padding:6px 10px;margin-bottom:4px}
+  .dk-row input[type=number]{border:1px solid var(--border);border-radius:3px;padding:5px 6px;background:#fff;font:inherit;width:100%;text-align:right}
+  .dk-row input[type=number]:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 1px var(--brand)}
+  .dk-row .date{font-size:12.5px;color:var(--text);font-variant-numeric:tabular-nums}
+  .dk-row .date .dow{color:var(--subtle);margin-left:4px;font-size:11.5px}
+  .dk-row .date.weekend{color:var(--subtle)}
+  .dk-rows{max-height:none}
+  .dk-summary{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:12px;padding:10px 12px;background:#fbfafa;border:1px solid var(--border);border-radius:4px}
+  .dk-summary .cell{display:flex;flex-direction:column;gap:2px}
+  .dk-summary .cell .lbl{font-size:10.5px;text-transform:uppercase;letter-spacing:.3px;color:var(--subtle);font-weight:600}
+  .dk-summary .cell .val{font-size:16px;font-weight:600;color:var(--text);font-variant-numeric:tabular-nums}
+
+  /* Who knows whom */
+  .wkw-head{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;padding:12px 14px;background:#fbfafa;border:1px solid var(--border);border-radius:4px}
+  .wkw-uuid{font-family:Consolas,monospace;font-size:12px;color:var(--subtle);background:#fff;border:1px solid var(--border);border-radius:3px;padding:6px 8px;display:flex;align-items:center;gap:6px}
+  .wkw-uuid code{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)}
+  .wkw-hdr,.wkw-row{display:grid;grid-template-columns:140px 1.4fr 1.4fr 32px;gap:8px;align-items:center}
+  .wkw-hdr{padding:4px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.3px;color:var(--subtle);font-weight:600}
+  .wkw-row{background:#fbfafa;border:1px solid var(--border);border-radius:4px;padding:8px 10px;margin-bottom:6px}
+  .wkw-row input,.wkw-row select{border:1px solid var(--border);border-radius:3px;padding:6px 8px;background:#fff;font:inherit;width:100%}
+  .wkw-row input:focus,.wkw-row select:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 1px var(--brand)}
+  .wkw-score{display:flex;gap:4px}
+  .wkw-score button{flex:1;border:1px solid var(--border);background:#fff;border-radius:3px;padding:5px;cursor:pointer;font:inherit;color:var(--subtle);font-size:12px}
+  .wkw-score button.on[data-s="1"]{background:var(--success);border-color:var(--success);color:#fff}
+  .wkw-score button.on[data-s="2"]{background:#8a6d00;border-color:#8a6d00;color:#fff}
+  .wkw-score button.on[data-s="3"]{background:var(--danger);border-color:var(--danger);color:#fff}
+
+  .stub{border:1px dashed var(--border-strong);border-radius:4px;padding:40px 20px;text-align:center;color:var(--subtle)}
+  .stub h3{margin:0 0 6px;color:var(--text);font-size:15px}
+  .stub .step{display:inline-block;background:var(--chip);padding:2px 10px;border-radius:10px;font-size:12px;margin-top:8px}
+
+  /* Context chip */
+  .ctx{display:inline-flex;align-items:center;gap:8px;background:#eff6fc;color:var(--brand);padding:4px 10px;border-radius:12px;font-size:12.5px;font-weight:600}
+  .ctx .dot{width:6px;height:6px;border-radius:50%;background:var(--brand)}
+
+  /* Toast */
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--text);color:#fff;padding:10px 18px;border-radius:4px;font-size:13px;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .2s}
+  .toast.show{opacity:1}
+
+  /* JSON payload preview (per-tab) */
+  /* Lifetime KPIs */
+  .life-h3{font-size:12px;text-transform:uppercase;letter-spacing:.4px;color:var(--subtle);font-weight:700;margin:14px 0 6px}
+  .life-h3:first-of-type{margin-top:0}
+  .life-head{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:6px;padding:14px;background:#fbfafa;border:1px solid var(--border);border-radius:4px}
+  .life-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:12px;background:#fff;border:1px solid var(--border);border-radius:4px;margin-bottom:6px}
+  .life-grid .fld input{width:100%}
+  /* Utilities */
+  .util-card{border:1px solid var(--border);border-radius:4px;background:#fbfafa;margin-bottom:14px}
+  .util-card .util-body{padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+  .util-card h3{margin:0;font-size:14px;color:var(--text)}
+  .util-card .hint{color:var(--subtle);font-size:12.5px;max-width:760px}
+  .util-card .util-controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:4px}
+  .util-card .util-status{font-size:12px;color:var(--subtle);min-height:16px}
+  .util-card.util-danger{border-color:#e8b8b8;background:#fdf6f6}
+  .util-confirm{font-size:12.5px;color:var(--subtle);display:flex;align-items:center;gap:6px;cursor:pointer}
+
+  .json-preview{margin-top:20px;border-top:1px solid var(--border);padding-top:12px}
+  .json-preview .jp-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+  .json-preview .jp-hdr label{font-size:11px;text-transform:uppercase;letter-spacing:.3px;color:var(--subtle);font-weight:600;margin:0}
+  .json-preview .jp-field{font-family:Consolas,monospace;font-size:11px;color:var(--subtle)}
+  .json-preview .jp-actions{display:flex;align-items:center;gap:8px}
+  .json-preview .jp-badge{display:none;font-size:10.5px;color:#fff;background:var(--brand);padding:1px 8px;border-radius:10px;font-weight:600}
+  .json-preview.dirty .jp-badge{display:inline-block}
+  .json-preview textarea{width:100%;min-height:140px;max-height:280px;font-family:Consolas,monospace;font-size:11px;line-height:1.4;background:#fbfafa;border:1px solid var(--border);border-radius:3px;padding:8px 10px;color:var(--text);resize:vertical;white-space:pre;overflow:auto}
+  .json-preview textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 1px var(--brand)}
+  .json-preview.dirty textarea{background:#fff8e0;border-color:#d8a800}
+  .json-preview.invalid textarea{background:#fdeaea;border-color:var(--danger)}
+</style>
+</head>
+<body>
+<div class="stage-note">V3 preview only · mirrors the V3 modal that will open from the Sales Insights command bar</div>
+
+<div class="stage">
+  <div class="modal" role="dialog" aria-labelledby="modal-title">
+    <header>
+      <div class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="7" width="4" height="14" rx="1"/><rect x="17" y="3" width="4" height="18" rx="1"/></svg></div>
+      <div class="title">
+        <h1 id="modal-title">Relationship Analytics Setup V3</h1>
+        <div class="sub">Configure mock Sales Premium / Relationship Analytics data for this record <span style="color:#888;font-size:11px">(v3.0 isolated-save)</span></div>
+      </div>
+      <span class="ctx" id="ctxChip"><span class="dot"></span><span id="ctxText">account · f5489e1a</span></span>
+      <button class="close" aria-label="Close" onclick="toast('Close (preview only)')">✕</button>
+    </header>
+
+    <nav class="tabs" role="tablist">
+      <button class="tab active" role="tab" data-tab="score">Score reasons</button>
+      <button class="tab" role="tab" data-tab="mc">Most contacted</button>
+      <button class="tab" role="tab" data-tab="day">Day KPIs</button>
+      <button class="tab" role="tab" data-tab="wkw">Who knows whom</button>
+      <button class="tab" role="tab" data-tab="life">Lifetime KPIs</button>
+      <button class="tab" role="tab" data-tab="util">Utilities</button>
+    </nav>
+
+    <section class="body">
+      <!-- Score reasons (Step 1 - functional) -->
+      <div class="pane" data-pane="score">
+        <div class="intro">
+          <div>
+            <h2>Predictive score</h2>
+            <div class="hint">Top-level score shown on the record, plus the reasons that explain it.</div>
+          </div>
+        </div>
+
+        <div class="scorehead">
+          <div class="fld">
+            <label for="f-score">Score</label>
+            <div class="score-wrap">
+              <input id="f-score" type="number" min="0" max="100" step="1" />
+              <span class="grade" id="f-grade-out">A</span>
+            </div>
+          </div>
+          <div class="fld">
+            <label for="f-grade">Grade</label>
+            <select id="f-grade">
+              <option value="0">Grade A</option>
+              <option value="1">Grade B</option>
+              <option value="2">Grade C</option>
+              <option value="3">Grade D</option>
+            </select>
+          </div>
+          <div class="fld">
+            <label>Score trend</label>
+            <div class="trend" role="group" aria-label="Score trend">
+              <button type="button" data-trend="0" title="Improving">▲ Improving</button>
+              <button type="button" data-trend="1" title="Steady">— Steady</button>
+              <button type="button" data-trend="2" title="Declining">▼ Declining</button>
+              <button type="button" data-trend="3" title="Not enough info">? Not enough info</button>
+            </div>
+          </div>
+          <div class="fld">
+            <label for="f-scoredon">Scored on</label>
+            <input id="f-scoredon" type="datetime-local" step="60" />
+          </div>
+        </div>
+
+        <div class="intro">
+          <div>
+            <h2>Score reasons</h2>
+            <div class="hint">Each row appears as a reason under the predictive score. A positive influence pushes the score up; negative pushes it down.</div>
+          </div>
+          <div class="toolbar">
+            <button class="btn sm" onclick="seedExample()">Load example</button>
+            <button class="btn sm" onclick="generateReasons()">Generate score reasons</button>
+            <button class="btn sm primary" onclick="addRow()">+ Add reason</button>
+          </div>
+        </div>
+
+        <div class="rowhdr">
+          <div>Influence</div>
+          <div>Reason</div>
+          <div>Tooltip</div>
+          <div></div>
+        </div>
+        <div class="rows" id="rows"></div>
+        <div id="empty" class="empty" hidden>No score reasons yet. Click <b>+ Add reason</b>.</div>
+
+        <div class="json-preview" data-jp="reasons"><div class="jp-hdr"><label>JSON payload <span class="jp-field">msdyn_scorereasons</span></label><div class="jp-actions"><span class="jp-badge">edited — will be saved as-is</span><button type="button" class="btn sm" data-jp-reset="reasons">Reset</button></div></div><textarea id="jp-reasons" spellcheck="false"></textarea></div>
+      </div>
+
+      <!-- Most contacted (Step 2 - functional) -->
+      <div class="pane" data-pane="mc" hidden>
+        <div class="intro">
+          <div>
+            <h2>Most contacted</h2>
+            <div class="hint">Top 3 people the team contacted most, and the top 3 who reached back most. Leave a row blank to hide it from the record.</div>
+          </div>
+          <div class="toolbar">
+            <button class="btn sm" onclick="clearMc()">Clear all</button>
+            <button class="btn sm primary" onclick="generateMc()">Generate sample data</button>
+          </div>
+        </div>
+
+        <div class="mc-group">
+          <h3>Contacts at this customer</h3>
+          <div class="sub">Top 3 external contacts engaged with this record. Account records fall back to active contacts when the account has no direct contacts.</div>
+          <div class="mc-hdr"><div>Contact</div><div>Emails</div><div>Meetings</div><div>Phone calls</div><div></div></div>
+          <div id="mc-by-us"></div>
+        </div>
+
+        <div class="mc-group">
+          <h3>Your colleagues</h3>
+          <div class="sub">Top 3 internal users active on this record. These show up under “Your colleagues” in the Sales Premium visual.</div>
+          <div class="mc-hdr"><div>Colleague</div><div>Emails</div><div>Meetings</div><div>Phone calls</div><div></div></div>
+          <div id="mc-by-them"></div>
+        </div>
+
+        <div class="json-preview" data-jp="mc"><div class="jp-hdr"><label>JSON payload <span class="jp-field">msdyn_mostcontacted • KpiResponse inner</span></label><div class="jp-actions"><span class="jp-badge">edited — will be saved as-is</span><button type="button" class="btn sm" data-jp-reset="mc">Reset</button></div></div><textarea id="jp-mc" spellcheck="false"></textarea></div>
+      </div>
+
+      <!-- Stubs for later steps -->
+      <div class="pane" data-pane="day" hidden>
+        <div class="intro">
+          <div>
+            <h2>Day KPIs</h2>
+            <div class="hint">Per-day email / meeting / call counts that feed the activity trend chart. Dates are anchored to today.</div>
+          </div>
+          <div class="toolbar">
+            <label class="fld" style="flex-direction:row;align-items:center;gap:6px;font-size:12.5px">
+              <span>Range</span>
+              <select id="dk-range">
+                <option value="7">Last 7 days</option>
+                <option value="30" selected>Last 30 days</option>
+                <option value="90">Last 90 days</option>
+              </select>
+            </label>
+            <button class="btn sm" onclick="clearDayKpi()">Clear all</button>
+            <button class="btn sm primary" onclick="generateDayKpi()">Generate sample data</button>
+          </div>
+        </div>
+
+        <div class="dk-summary" id="dk-summary"></div>
+
+        <div class="dk-hdr">
+          <div>Date</div>
+          <div title="Emails received">Em in</div>
+          <div title="Emails sent">Em out</div>
+          <div title="Meetings received">Mtg in</div>
+          <div title="Meetings sent">Mtg out</div>
+          <div title="Phone calls received">Call in</div>
+          <div title="Phone calls made">Call out</div>
+          <div title="LinkedIn emails sent">LI out</div>
+          <div></div>
+        </div>
+        <div class="dk-rows" id="dk-rows"></div>
+        <div id="dk-empty" class="empty" hidden>No day KPIs yet. Click <b>Generate sample data</b>.</div>
+
+        <div class="json-preview" data-jp="day"><div class="jp-hdr"><label>JSON payload <span class="jp-field">msdyn_relationshipanalyticsdaykpi • KpiResponse inner</span></label><div class="jp-actions"><span class="jp-badge">edited — will be saved as-is</span><button type="button" class="btn sm" data-jp-reset="day">Reset</button></div></div><textarea id="jp-day" spellcheck="false"></textarea></div>
+      </div>
+      <div class="pane" data-pane="wkw" hidden>
+        <div class="intro">
+          <div>
+            <h2>Who knows whom</h2>
+            <div class="hint">Internal colleagues who have a strong / fair / weak tie to this record. The parent record’s email is hashed to a UUID (v3/DNS) that keys the stored data. Saving will also remove any stale rows from the record's visualization.</div>
+          </div>
+          <div class="toolbar">
+            <button class="btn sm" onclick="clearWkw()">Clear all</button>
+            <button class="btn sm" onclick="generateWkw()">Generate sample data</button>
+            <button class="btn sm primary" onclick="addWkw()">+ Add connection</button>
+          </div>
+        </div>
+
+        <div class="wkw-head">
+          <div class="fld">
+            <label for="wkw-email">Parent record email</label>
+            <input id="wkw-email" type="email" placeholder="name@contoso.com">
+          </div>
+          <div class="fld">
+            <label>Computed UUID (v3 / DNS)</label>
+            <div class="wkw-uuid"><code id="wkw-uuid">—</code><button class="btn sm" onclick="copyWkwUuid()">Copy</button></div>
+          </div>
+        </div>
+
+        <div class="wkw-hdr"><div>Connection score</div><div>Display name</div><div>Email address</div><div></div></div>
+        <div id="wkw-rows"></div>
+        <div id="wkw-empty" class="empty" hidden>No connections yet. Click <b>+ Add connection</b> or <b>Generate sample data</b>.</div>
+        <datalist id="dl-wkw-users"></datalist>
+
+        <div class="json-preview" data-jp="wkw"><div class="jp-hdr"><label>JSON payload <span class="jp-field">msdyn_wkwjson</span></label><div class="jp-actions"><span class="jp-badge">edited — will be saved as-is</span><button type="button" class="btn sm" data-jp-reset="wkw">Reset</button></div></div><textarea id="jp-wkw" spellcheck="false"></textarea></div>
+      </div>
+      <div class="pane" data-pane="life" hidden>
+        <div class="intro">
+          <div>
+            <h2>Lifetime KPIs</h2>
+            <div class="hint">Rolled-up engagement totals shown on the Sales Insights / Relationship Analytics tile.</div>
+          </div>
+          <div class="toolbar">
+            <button class="btn sm">Clear all</button>
+            <button class="btn sm primary">Generate sample data</button>
+          </div>
+        </div>
+        <h3 class="life-h3">Relationship health</h3>
+        <div class="life-head">
+          <div class="fld"><label>Health state</label><select><option>Healthy</option><option>At risk</option><option>Poor</option></select></div>
+          <div class="fld"><label>Health trend</label><select><option>Improving</option><option>Steady</option><option>Declining</option></select></div>
+          <div class="fld"><label>Time by team (mins)</label><input type="number" value="240"></div>
+          <div class="fld"><label>Time by customer (mins)</label><input type="number" value="90"></div>
+        </div>
+        <h3 class="life-h3">Activity totals</h3>
+        <div class="life-grid">
+          <div class="fld"><label>Emails sent</label><input type="number" value="42"></div>
+          <div class="fld"><label>Emails received</label><input type="number" value="38"></div>
+          <div class="fld"><label>Meetings sent</label><input type="number" value="6"></div>
+          <div class="fld"><label>Meetings received</label><input type="number" value="5"></div>
+          <div class="fld"><label>Phone calls made</label><input type="number" value="14"></div>
+          <div class="fld"><label>Phone calls received</label><input type="number" value="11"></div>
+          <div class="fld"><label>LinkedIn emails sent</label><input type="number" value="3"></div>
+          <div class="fld"><label>Face time w/ customer (mins)</label><input type="number" value="60"></div>
+        </div>
+        <h3 class="life-h3">Engagement &amp; response</h3>
+        <div class="life-grid">
+          <div class="fld"><label>Opened emails (0–1)</label><input type="number" value="0.78"></div>
+          <div class="fld"><label>Links clicked (0–1)</label><input type="number" value="0.31"></div>
+          <div class="fld"><label>Attachments opened (0–1)</label><input type="number" value="0.22"></div>
+          <div class="fld"><label>Response rate by them (0–1)</label><input type="number" value="0.65"></div>
+          <div class="fld"><label>Response rate by us (0–1)</label><input type="number" value="0.81"></div>
+          <div class="fld"><label>Avg first response by them (hrs)</label><input type="number" value="18.5"></div>
+          <div class="fld"><label>Avg first response by us (hrs)</label><input type="number" value="4.2"></div>
+        </div>
+        <div class="json-preview"><div class="jp-hdr"><label>JSON payload <span class="jp-field">msdyn_relationshipanalyticskpijson</span></label></div><textarea spellcheck="false">{
+  "EntityId": "...",
+  "OrganizationId": "...",
+  "EntityType": "opportunity",
+  "KpiResponse": { "EmailsSent": 42, "EmailsReceived": 38 }
+}</textarea></div>
+      </div>
+      <div class="pane" data-pane="util" hidden>
+        <div class="intro">
+          <div>
+            <h2>Utilities</h2>
+            <div class="hint">One-off maintenance actions for this record — these run immediately and don’t require a Save.</div>
+          </div>
+        </div>
+        <div class="util-card">
+          <div class="util-body">
+            <h3>Roll close date forward</h3>
+            <div class="hint">Sets <code>estimatedclosedate</code> on this opportunity to today + N days.</div>
+            <div class="util-controls">
+              <label class="fld" style="flex-direction:row;align-items:center;gap:6px;font-size:12.5px"><span>Days from today</span><input type="number" value="30" style="width:80px"></label>
+              <button class="btn sm primary">Roll forward</button>
+            </div>
+            <div class="util-status">&nbsp;</div>
+          </div>
+        </div>
+        <div class="util-card util-danger">
+          <div class="util-body">
+            <h3>Wipe all demo data for this record</h3>
+            <div class="hint">Deletes the demo row plus every related lifetime / daily KPI / most-contacted / WKW row that points at this record. On opportunities, it also clears won-opportunity comparison KPI rows. A blank replacement row is then created so the native visual does not fall back to stale sample data.</div>
+            <div class="util-controls">
+              <label class="util-confirm"><input type="checkbox"> I understand this is destructive</label>
+              <button class="btn sm danger" disabled>Wipe demo data</button>
+            </div>
+            <div class="util-status">Preview: wipe leaves this record blank and creates a zero-value replacement row.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="foot">
+      <div class="status" id="status">Unsaved changes stored locally in this preview.</div>
+      <div class="actions">
+        <button class="btn" onclick="toast('Cancel (preview only)')">Cancel</button>
+        <button class="btn primary" onclick="save()">Save</button>
+      </div>
+    </footer>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+  // ---- Tab switching ----
+  document.querySelectorAll('.tab').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      if(btn.disabled) return;
+      document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t===btn));
+      const key=btn.dataset.tab;
+      document.querySelectorAll('.pane').forEach(p=>p.hidden = (p.dataset.pane!==key));
+    });
+  });
+
+  // ---- Score reasons state ----
+  const STORAGE_KEY='ra-setup-preview:scorereasons';
+  const HEAD_KEY='ra-setup-preview:scorehead';
+  const GRADE_LABELS = { 0:'Grade A', 1:'Grade B', 2:'Grade C', 3:'Grade D' };
+  let reasons = loadReasons();
+  let head = loadHead();
+  bindHead();
+  render();
+
+  function loadReasons(){
+    try{
+      const raw=localStorage.getItem(STORAGE_KEY);
+      if(raw) return JSON.parse(raw);
+    }catch(e){}
+    return exampleReasons();
+  }
+  function loadHead(){
+    try{
+      const raw=localStorage.getItem(HEAD_KEY);
+      if(raw) return JSON.parse(raw);
+    }catch(e){}
+    return { score:78, grade:1, trend:1, scoredOn:nowLocalDT() };
+  }
+
+  function nowLocalDT(){
+    const d=new Date();
+    const pad=n=>String(n).padStart(2,'0');
+    return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes());
+  }
+
+  function bindHead(){
+    const s=document.getElementById('f-score');
+    const g=document.getElementById('f-grade');
+    const go=document.getElementById('f-grade-out');
+    const d=document.getElementById('f-scoredon');
+    s.value=head.score;
+    g.value=String(head.grade);
+    go.textContent=GRADE_LABELS[head.grade] || '';
+    d.value=head.scoredOn;
+    document.querySelectorAll('.trend button').forEach(b=>{
+      b.classList.toggle('on', +b.dataset.trend===head.trend);
+      b.addEventListener('click',()=>{ head.trend=+b.dataset.trend; document.querySelectorAll('.trend button').forEach(x=>x.classList.toggle('on',x===b)); persistHead(); });
+    });
+    s.addEventListener('input',()=>{ head.score=clamp(+s.value||0,0,100); persistHead(); });
+    g.addEventListener('change',()=>{ head.grade=+g.value; go.textContent=GRADE_LABELS[head.grade] || ''; persistHead(); });
+    d.addEventListener('change',()=>{ head.scoredOn=d.value; persistHead(); });
+  }
+  function clamp(n,a,b){ return Math.max(a,Math.min(b,n)); }
+  function persistHead(){ localStorage.setItem(HEAD_KEY,JSON.stringify(head)); setStatus('Draft saved locally'); }
+
+  function exampleReasons(){
+    return [
+      {influence:1,value:"Active engagement in last 30 days",tooltip:"Multiple inbound emails and meetings in the last month."},
+      {influence:1,value:"Matches ideal customer profile",tooltip:"Industry, size and region all match the ICP."},
+      {influence:0,value:"No response to last 3 emails",tooltip:"Recipient has not replied to the last three outbound messages."}
+    ];
+  }
+
+  function render(){
+    const host=document.getElementById('rows');
+    host.innerHTML='';
+    reasons.forEach((r,i)=>{
+      const row=document.createElement('div');
+      row.className='row';
+      row.innerHTML=`
+        <div class="influence">
+          <label class="switch">
+            <input type="checkbox" ${r.influence?'checked':''} data-i="${i}" data-k="influence">
+            <span class="slider"></span>
+          </label>
+          <span class="lbl">${r.influence?'Positive':'Negative'}</span>
+        </div>
+        <input type="text" value="${esc(r.value)}" placeholder="Reason shown to the user" data-i="${i}" data-k="value">
+        <input type="text" value="${esc(r.tooltip)}" placeholder="Tooltip shown on hover" data-i="${i}" data-k="tooltip">
+        <button class="btn danger" title="Remove" aria-label="Remove row" data-i="${i}" data-k="remove">✕</button>`;
+      host.appendChild(row);
+    });
+    document.getElementById('empty').hidden = reasons.length>0;
+    host.querySelectorAll('input,button').forEach(el=>{
+      el.addEventListener('input',onEdit);
+      el.addEventListener('click',onClick);
+    });
+  }
+
+  function onEdit(e){
+    const i=+e.target.dataset.i, k=e.target.dataset.k;
+    if(k==='influence'){
+      reasons[i].influence = e.target.checked?1:0;
+      e.target.closest('.influence').querySelector('.lbl').textContent = reasons[i].influence?'Positive':'Negative';
+    } else if(k==='value'||k==='tooltip'){
+      reasons[i][k] = e.target.value;
+    }
+    persist();
+  }
+  function onClick(e){
+    if(e.target.dataset && e.target.dataset.k==='remove'){
+      reasons.splice(+e.target.dataset.i,1);
+      persist(); render();
+    }
+  }
+  const POSITIVE_REASONS = [
+    { value:"Active engagement in last 30 days", tooltip:"Multiple inbound emails and meetings in the last month." },
+    { value:"Matches ideal customer profile",    tooltip:"Industry, size and region all match the ICP." },
+    { value:"Strong executive sponsorship",      tooltip:"Senior stakeholder has attended recent meetings." },
+    { value:"Budget confirmed for this quarter", tooltip:"Customer has confirmed allocated budget in the current quarter." },
+    { value:"Responds within 24 hours on average", tooltip:"Average first-response time is under one business day." }
+  ];
+  const NEGATIVE_REASONS = [
+    { value:"No response to last 3 emails",        tooltip:"Recipient has not replied to the last three outbound messages." },
+    { value:"Decision maker recently changed",     tooltip:"Primary contact left the company within the last 60 days." },
+    { value:"Competitor recently contacted",       tooltip:"Activity suggests a competitor is actively engaged." },
+    { value:"Opportunity stalled for over 30 days",tooltip:"No stage progression or activity in the last month." },
+    { value:"Budget on hold",                      tooltip:"Customer flagged that purchasing is temporarily frozen." }
+  ];
+  function sampleN(arr, n){
+    const copy=arr.slice();
+    for(let i=copy.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [copy[i],copy[j]]=[copy[j],copy[i]]; }
+    return copy.slice(0,n);
+  }
+  function generateReasons(){
+    const pos = sampleN(POSITIVE_REASONS,2).map(r=>({ influence:1, value:r.value, tooltip:r.tooltip }));
+    const neg = sampleN(NEGATIVE_REASONS,2).map(r=>({ influence:0, value:r.value, tooltip:r.tooltip }));
+    reasons = pos.concat(neg);
+    persist(); render(); toast('Generated 2 positive + 2 negative');
+  }
+
+  function addRow(){
+    reasons.push({influence:1,value:"",tooltip:""});
+    persist(); render();
+    const host=document.getElementById('rows');
+    const last=host.lastElementChild?.querySelector('input[type=text]');
+    last && last.focus();
+  }
+  function seedExample(){ reasons = exampleReasons(); persist(); render(); toast('Example loaded'); }
+  function persist(){ localStorage.setItem(STORAGE_KEY,JSON.stringify(reasons)); setStatus('Draft saved locally'); }
+
+  // ---- Most contacted ----
+  const MC_KEY='ra-setup-preview:mostcontacted';
+  const SAMPLE_NAMES = [
+    "Alicia Torres","Brandon Lee","Carla Mendez","Darius Okonkwo","Emma Fischer",
+    "Farid Nasser","Grace Liu","Henrik Sørensen","Isla Kowalski","Julian Rossi",
+    "Keiko Tanaka","Leo Martín","Mina Park","Noah Bennett","Olivia Schmidt"
+  ];
+  const SAMPLE_CONTACTS = ["Ada Vain", "Adam Smith", "Abbey Blees", "Dyfed Smith", "Jordan Reid", "Sam Patel"];
+  const SAMPLE_USERS = ["David Mallory", "Priya Ramanathan", "Alan Steiner", "Nora Kim", "Jamie Rivera", "Megan Bowen"];
+  let previewContacts = [];
+  let previewUsers = [];
+  let peopleLoadPromise = null;
+  let mc = loadMc();
+  function loadMc(){
+    try{ const raw=localStorage.getItem(MC_KEY); if(raw) return JSON.parse(raw); }catch(e){}
+    return { byUs: blankRows(3), byThem: blankRows(3) };
+  }
+  function blankRows(n){ return Array.from({length:n},()=>({ name:'', emails:0, meetings:0, phoneCalls:0 })); }
+  function persistMc(){ localStorage.setItem(MC_KEY,JSON.stringify(mc)); setStatus('Draft saved locally'); }
+  function initials(name){ return (name||'?').split(/\s+/).map(p=>p[0]).filter(Boolean).slice(0,2).join('').toUpperCase() || '?'; }
+
+  function renderMc(){
+    renderMcGroup('mc-by-us', mc.byUs, 'byUs');
+    renderMcGroup('mc-by-them', mc.byThem, 'byThem');
+  }
+  function renderMcGroup(hostId, rows, key){
+    const host = document.getElementById(hostId);
+    host.innerHTML = '';
+    rows.forEach((r,i)=>{
+      const row = document.createElement('div');
+      row.className = 'mc-row';
+      row.innerHTML =
+        '<div class="name-wrap">' +
+          '<span class="avatar">'+esc(initials(r.name))+'</span>' +
+          '<input type="text" placeholder="Full name" value="'+esc(r.name)+'" data-g="'+key+'" data-i="'+i+'" data-k="name">' +
+        '</div>' +
+        '<input type="number" min="0" value="'+(r.emails||0)+'" data-g="'+key+'" data-i="'+i+'" data-k="emails">' +
+        '<input type="number" min="0" value="'+(r.meetings||0)+'" data-g="'+key+'" data-i="'+i+'" data-k="meetings">' +
+        '<input type="number" min="0" value="'+(r.phoneCalls||0)+'" data-g="'+key+'" data-i="'+i+'" data-k="phoneCalls">' +
+        '<button class="btn danger" title="Clear row" aria-label="Clear row" data-g="'+key+'" data-i="'+i+'" data-k="clear">×</button>';
+      host.appendChild(row);
+    });
+    host.querySelectorAll('input').forEach(el=>el.addEventListener('input', onMcEdit));
+    host.querySelectorAll('button[data-k="clear"]').forEach(el=>el.addEventListener('click', onMcClear));
+  }
+  function onMcEdit(e){
+    const g=e.target.dataset.g, i=+e.target.dataset.i, k=e.target.dataset.k;
+    if(k==='name'){
+      mc[g][i].name = e.target.value;
+      const av = e.target.closest('.mc-row').querySelector('.avatar');
+      if(av) av.textContent = initials(e.target.value);
+    } else {
+      mc[g][i][k] = Math.max(0, parseInt(e.target.value,10) || 0);
+    }
+    persistMc();
+  }
+  function onMcClear(e){
+    const g=e.target.dataset.g;
+    mc[g].splice(+e.target.dataset.i, 1);
+    mc[g].push({ name:'', emails:0, meetings:0, phoneCalls:0 });
+    persistMc(); renderMc();
+  }
+  function loadPreviewPeople(){
+    if(peopleLoadPromise) return peopleLoadPromise;
+    setStatus('Loading people for Most contacted...');
+    peopleLoadPromise = new Promise(resolve=>{
+      setTimeout(()=>{
+        // This preview mirrors the account case that triggered the fix: no direct
+        // account contacts, then a broad active-contact fallback is used.
+        const directAccountContacts = [];
+        previewContacts = directAccountContacts.length >= 3 ? directAccountContacts.slice() : SAMPLE_CONTACTS.slice();
+        previewUsers = SAMPLE_USERS.slice();
+        resolve(true);
+      }, 250);
+    });
+    return peopleLoadPromise;
+  }
+  function generateMostContactedSample(){
+    if(!previewContacts.length || !previewUsers.length) return false;
+    const rand = (min,max)=>Math.floor(Math.random()*(max-min+1))+min;
+    const pickC = sampleN(previewContacts, Math.min(3, previewContacts.length));
+    const pickU = sampleN(previewUsers, Math.min(3, previewUsers.length));
+    mc.byUs   = pickC.map(n=>({ name:n, emails:rand(15,80), meetings:rand(1,8),  phoneCalls:rand(0,6) }));
+    mc.byThem = pickU.map(n=>({ name:n, emails:rand(10,60), meetings:rand(0,5),  phoneCalls:rand(0,4) }));
+    while(mc.byUs.length   < 3) mc.byUs.push({ name:'', emails:0, meetings:0, phoneCalls:0 });
+    while(mc.byThem.length < 3) mc.byThem.push({ name:'', emails:0, meetings:0, phoneCalls:0 });
+    persistMc(); renderMc(); toast('Sample data generated');
+    return true;
+  }
+  function generateMc(){
+    if(generateMostContactedSample()) return;
+    toast('Loading people, then generating sample data...');
+    loadPreviewPeople().then(()=>{
+      if(!generateMostContactedSample()) toast('Could not find enough contacts or colleagues', true);
+    });
+  }
+  function clearMc(){
+    mc = { byUs: blankRows(3), byThem: blankRows(3) };
+    persistMc(); renderMc(); toast('Cleared');
+  }
+  renderMc();
+
+  // ---- Day KPIs ----
+  const DK_KEY='ra-setup-preview:daykpi';
+  let dayKpi = loadDayKpi();
+  function loadDayKpi(){
+    try{ const raw=localStorage.getItem(DK_KEY); if(raw) return JSON.parse(raw); }catch(e){}
+    return [];
+  }
+  function persistDayKpi(){ localStorage.setItem(DK_KEY,JSON.stringify(dayKpi)); setStatus('Draft saved locally'); }
+  const DK_FIELDS = ['emailsIn','emailsOut','meetingsIn','meetingsOut','callsIn','callsOut','liOut'];
+  const DK_LABELS = { emailsIn:'Em in', emailsOut:'Em out', meetingsIn:'Mtg in', meetingsOut:'Mtg out', callsIn:'Call in', callsOut:'Call out', liOut:'LI out' };
+  const DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  function fmtDate(d){ const dt = (typeof d === 'string') ? new Date(d+'T00:00:00') : d; const pad=n=>String(n).padStart(2,'0'); return pad(dt.getDate())+'/'+pad(dt.getMonth()+1); }
+  function isoDate(d){ const pad=n=>String(n).padStart(2,'0'); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+  function isWeekend(iso){ const dow = new Date(iso+'T00:00:00').getDay(); return dow===0 || dow===6; }
+
+  function renderDayKpi(){
+    const host = document.getElementById('dk-rows');
+    host.innerHTML = '';
+    dayKpi.forEach((r,i)=>{
+      const row = document.createElement('div');
+      row.className = 'dk-row';
+      const d = new Date(r.day+'T00:00:00');
+      const dowName = DOW[d.getDay()];
+      const weekend = isWeekend(r.day);
+      row.innerHTML =
+        '<div class="date'+(weekend?' weekend':'')+'">'+fmtDate(r.day)+'<span class="dow">'+dowName+'</span></div>' +
+        DK_FIELDS.map(f=>'<input type="number" min="0" value="'+(r[f]||0)+'" data-i="'+i+'" data-k="'+f+'">').join('') +
+        '<button class="btn danger" title="Remove" aria-label="Remove row" data-i="'+i+'" data-k="remove">✕</button>';
+      host.appendChild(row);
+    });
+    document.getElementById('dk-empty').hidden = dayKpi.length>0;
+    host.querySelectorAll('input').forEach(el=>el.addEventListener('input', onDkEdit));
+    host.querySelectorAll('button[data-k="remove"]').forEach(el=>el.addEventListener('click', onDkRemove));
+    renderDkSummary();
+  }
+  function renderDkSummary(){
+    const host = document.getElementById('dk-summary');
+    if(!dayKpi.length){ host.innerHTML = '<div class="cell"><span class="lbl">Rows</span><span class="val">0</span></div>'; return; }
+    const totals = {};
+    DK_FIELDS.forEach(f=>totals[f]=0);
+    dayKpi.forEach(r=>DK_FIELDS.forEach(f=>totals[f]+=(+r[f]||0)));
+    host.innerHTML = DK_FIELDS.map(f=>'<div class="cell"><span class="lbl">'+DK_LABELS[f]+'</span><span class="val">'+totals[f]+'</span></div>').join('');
+  }
+  function onDkEdit(e){
+    const i=+e.target.dataset.i, k=e.target.dataset.k;
+    dayKpi[i][k] = Math.max(0, parseInt(e.target.value,10) || 0);
+    persistDayKpi(); renderDkSummary();
+  }
+  function onDkRemove(e){
+    dayKpi.splice(+e.target.dataset.i,1);
+    persistDayKpi(); renderDayKpi();
+  }
+  function generateDayKpi(){
+    const n = parseInt(document.getElementById('dk-range').value,10) || 30;
+    const rand = (min,max)=>Math.floor(Math.random()*(max-min+1))+min;
+    const out = [];
+    const today = new Date(); today.setHours(0,0,0,0);
+    for(let i=n-1; i>=0; i--){
+      const d = new Date(today); d.setDate(d.getDate()-i);
+      const iso = isoDate(d);
+      const weekend = isWeekend(iso);
+      const k = weekend ? 0.25 : 1; // dampen weekends
+      out.push({
+        day: iso,
+        emailsIn:    Math.round(rand(3,18)*k),
+        emailsOut:   Math.round(rand(2,14)*k),
+        meetingsIn:  Math.round(rand(0,2)*k),
+        meetingsOut: Math.round(rand(0,3)*k),
+        callsIn:     Math.round(rand(0,3)*k),
+        callsOut:    Math.round(rand(0,4)*k),
+        liOut:       Math.round(rand(0,2)*k)
+      });
+    }
+    dayKpi = out;
+    persistDayKpi(); renderDayKpi(); toast('Generated '+n+' days');
+  }
+  function clearDayKpi(){
+    dayKpi = [];
+    persistDayKpi(); renderDayKpi(); toast('Cleared');
+  }
+  renderDayKpi();
+
+  // ---- Who knows whom ----
+  // UUID v3 / DNS namespace — same implementation Microsoft ships in Sales Premium's UUIDGenerator.
+  var uuidlib; (()=>{"use strict";var r={d:(e,n)=>{for(var t in n)r.o(n,t)&&!r.o(e,t)&&Object.defineProperty(e,t,{enumerable:!0,get:n[t]})},o:(r,e)=>Object.prototype.hasOwnProperty.call(r,e),r:r=>{"undefined"!=typeof Symbol&&Symbol.toStringTag&&Object.defineProperty(r,Symbol.toStringTag,{value:"Module"}),Object.defineProperty(r,"__esModule",{value:!0})}},e={};r.r(e),r.d(e,{getUuidv3:()=>g});const n=/^(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}|00000000-0000-0000-0000-000000000000)$/i,t=function(r){return"string"==typeof r&&n.test(r)};for(var o=[],a=0;a<256;++a)o.push((a+256).toString(16).substr(1));function i(r){return 14+(r+64>>>9<<4)+1}function u(r,e){var n=(65535&r)+(65535&e);return(r>>16)+(e>>16)+(n>>16)<<16|65535&n}function f(r,e,n,t,o,a){return u((i=u(u(e,r),u(t,a)))<<(f=o)|i>>>32-f,n);var i,f}function c(r,e,n,t,o,a,i){return f(e&n|~e&t,r,e,o,a,i)}function s(r,e,n,t,o,a,i){return f(e&t|n&~t,r,e,o,a,i)}function l(r,e,n,t,o,a,i){return f(e^n^t,r,e,o,a,i)}function d(r,e,n,t,o,a,i){return f(n^(e|~t),r,e,o,a,i)}var p=function(r,e,n){function a(r,e,a,i){if("string"==typeof r&&(r=function(r){r=unescape(encodeURIComponent(r));for(var e=[],n=0;n<r.length;++n)e.push(r.charCodeAt(n));return e}(r)),"string"==typeof e&&(e=function(r){if(!t(r))throw TypeError("Invalid UUID");var e,n=new Uint8Array(16);return n[0]=(e=parseInt(r.slice(0,8),16))>>>24,n[1]=e>>>16&255,n[2]=e>>>8&255,n[3]=255&e,n[4]=(e=parseInt(r.slice(9,13),16))>>>8,n[5]=255&e,n[6]=(e=parseInt(r.slice(14,18),16))>>>8,n[7]=255&e,n[8]=(e=parseInt(r.slice(19,23),16))>>>8,n[9]=255&e,n[10]=(e=parseInt(r.slice(24,36),16))/1099511627776&255,n[11]=e/4294967296&255,n[12]=e>>>24&255,n[13]=e>>>16&255,n[14]=e>>>8&255,n[15]=255&e,n}(e)),16!==e.length)throw TypeError("Namespace must be array-like (16 iterable integer values, 0-255)");var u=new Uint8Array(16+r.length);if(u.set(e),u.set(r,e.length),(u=n(u))[6]=15&u[6]|48,u[8]=63&u[8]|128,a){i=i||0;for(var f=0;f<16;++f)a[i+f]=u[f];return a}return function(r){var e=arguments.length>1&&void 0!==arguments[1]?arguments[1]:0,n=(o[r[e+0]]+o[r[e+1]]+o[r[e+2]]+o[r[e+3]]+"-"+o[r[e+4]]+o[r[e+5]]+"-"+o[r[e+6]]+o[r[e+7]]+"-"+o[r[e+8]]+o[r[e+9]]+"-"+o[r[e+10]]+o[r[e+11]]+o[r[e+12]]+o[r[e+13]]+o[r[e+14]]+o[r[e+15]]).toLowerCase();if(!t(n))throw TypeError("Stringified UUID is invalid");return n}(u)}try{a.name="v3"}catch(r){}return a.DNS="6ba7b810-9dad-11d1-80b4-00c04fd430c8",a.URL="6ba7b811-9dad-11d1-80b4-00c04fd430c8",a}(0,0,(function(r){if("string"==typeof r){var e=unescape(encodeURIComponent(r));r=new Uint8Array(e.length);for(var n=0;n<e.length;++n)r[n]=e.charCodeAt(n)}return function(r){for(var e=[],n=32*r.length,t="0123456789abcdef",o=0;o<n;o+=8){var a=r[o>>5]>>>o%32&255,i=parseInt(t.charAt(a>>>4&15)+t.charAt(15&a),16);e.push(i)}return e}(function(r,e){r[e>>5]|=128<<e%32,r[i(e)-1]=e;for(var n=1732584193,t=-271733879,o=-1732584194,a=271733878,f=0;f<r.length;f+=16){var p=n,v=t,g=o,h=a;n=c(n,t,o,a,r[f],7,-680876936),a=c(a,n,t,o,r[f+1],12,-389564586),o=c(o,a,n,t,r[f+2],17,606105819),t=c(t,o,a,n,r[f+3],22,-1044525330),n=c(n,t,o,a,r[f+4],7,-176418897),a=c(a,n,t,o,r[f+5],12,1200080426),o=c(o,a,n,t,r[f+6],17,-1473231341),t=c(t,o,a,n,r[f+7],22,-45705983),n=c(n,t,o,a,r[f+8],7,1770035416),a=c(a,n,t,o,r[f+9],12,-1958414417),o=c(o,a,n,t,r[f+10],17,-42063),t=c(t,o,a,n,r[f+11],22,-1990404162),n=c(n,t,o,a,r[f+12],7,1804603682),a=c(a,n,t,o,r[f+13],12,-40341101),o=c(o,a,n,t,r[f+14],17,-1502002290),n=s(n,t=c(t,o,a,n,r[f+15],22,1236535329),o,a,r[f+1],5,-165796510),a=s(a,n,t,o,r[f+6],9,-1069501632),o=s(o,a,n,t,r[f+11],14,643717713),t=s(t,o,a,n,r[f],20,-373897302),n=s(n,t,o,a,r[f+5],5,-701558691),a=s(a,n,t,o,r[f+10],9,38016083),o=s(o,a,n,t,r[f+15],14,-660478335),t=s(t,o,a,n,r[f+4],20,-405537848),n=s(n,t,o,a,r[f+9],5,568446438),a=s(a,n,t,o,r[f+14],9,-1019803690),o=s(o,a,n,t,r[f+3],14,-187363961),t=s(t,o,a,n,r[f+8],20,1163531501),n=s(n,t,o,a,r[f+13],5,-1444681467),a=s(a,n,t,o,r[f+2],9,-51403784),o=s(o,a,n,t,r[f+7],14,1735328473),n=l(n,t=s(t,o,a,n,r[f+12],20,-1926607734),o,a,r[f+5],4,-378558),a=l(a,n,t,o,r[f+8],11,-2022574463),o=l(o,a,n,t,r[f+11],16,1839030562),t=l(t,o,a,n,r[f+14],23,-35309556),n=l(n,t,o,a,r[f+1],4,-1530992060),a=l(a,n,t,o,r[f+4],11,1272893353),o=l(o,a,n,t,r[f+7],16,-155497632),t=l(t,o,a,n,r[f+10],23,-1094730640),n=l(n,t,o,a,r[f+13],4,681279174),a=l(a,n,t,o,r[f],11,-358537222),o=l(o,a,n,t,r[f+3],16,-722521979),t=l(t,o,a,n,r[f+6],23,76029189),n=l(n,t,o,a,r[f+9],4,-640364487),a=l(a,n,t,o,r[f+12],11,-421815835),o=l(o,a,n,t,r[f+15],16,530742520),n=d(n,t=l(t,o,a,n,r[f+2],23,-995338651),o,a,r[f],6,-198630844),a=d(a,n,t,o,r[f+7],10,1126891415),o=d(o,a,n,t,r[f+14],15,-1416354905),t=d(t,o,a,n,r[f+5],21,-57434055),n=d(n,t,o,a,r[f+12],6,1700485571),a=d(a,n,t,o,r[f+3],10,-1894986606),o=d(o,a,n,t,r[f+10],15,-1051523),t=d(t,o,a,n,r[f+1],21,-2054922799),n=d(n,t,o,a,r[f+8],6,1873313359),a=d(a,n,t,o,r[f+15],10,-30611744),o=d(o,a,n,t,r[f+6],15,-1560198380),t=d(t,o,a,n,r[f+13],21,1309151649),n=d(n,t,o,a,r[f+4],6,-145523070),a=d(a,n,t,o,r[f+11],10,-1120210379),o=d(o,a,n,t,r[f+2],15,718787259),t=d(t,o,a,n,r[f+9],21,-343485551),n=u(n,p),t=u(t,v),o=u(o,g),a=u(a,h)}return[n,t,o,a]}(function(r){if(0===r.length)return[];for(var e=8*r.length,n=new Uint32Array(i(e)),t=0;t<e;t+=8)n[t>>5]|=(255&r[t/8])<<t%32;return n}(r),8*r.length))}));const v=p;function g(r){return v(r,v.DNS)}uuidlib=e})();
+
+  const WKW_KEY = 'ra-setup-preview:wkw';
+  const SCORE_LBL = { "1":"Strong", "2":"Fair", "3":"Weak" };
+  let wkw = loadWkw();
+  function loadWkw(){
+    try{ const raw=localStorage.getItem(WKW_KEY); if(raw) return JSON.parse(raw); }catch(e){}
+    return { parentEmail:"alex@contoso.com", connections:[] };
+  }
+  function persistWkw(){ localStorage.setItem(WKW_KEY, JSON.stringify(wkw)); setStatus('Draft saved locally'); }
+
+  function computeUuid(email){
+    const e = (email||"").trim().toLowerCase();
+    if (!e) return "";
+    try { return uuidlib.getUuidv3(e); } catch (ex) { return ""; }
+  }
+  function renderWkwHead(){
+    document.getElementById('wkw-email').value = wkw.parentEmail || "";
+    document.getElementById('wkw-uuid').textContent = computeUuid(wkw.parentEmail) || "—";
+  }
+  function renderWkw(){
+    renderWkwHead();
+    const host = document.getElementById('wkw-rows');
+    host.innerHTML = '';
+    wkw.connections.forEach((c,i)=>{
+      const row = document.createElement('div');
+      row.className = 'wkw-row';
+      row.innerHTML =
+        '<div class="wkw-score" role="group">' +
+          ['1','2','3'].map(s=>'<button type="button" data-s="'+s+'" data-i="'+i+'" data-k="score" class="'+(c.score===s?'on':'')+'">'+SCORE_LBL[s]+'</button>').join('') +
+        '</div>' +
+        '<input type="text" placeholder="Full name" value="'+esc(c.name)+'" data-i="'+i+'" data-k="name">' +
+        '<input type="email" placeholder="name@contoso.com" value="'+esc(c.email)+'" data-i="'+i+'" data-k="email">' +
+        '<button class="btn danger" title="Remove" aria-label="Remove" data-i="'+i+'" data-k="remove">✕</button>';
+      host.appendChild(row);
+    });
+    document.getElementById('wkw-empty').hidden = wkw.connections.length > 0;
+    host.querySelectorAll('input').forEach(el=>el.addEventListener('input', onWkwEdit));
+    host.querySelectorAll('.wkw-score button').forEach(el=>el.addEventListener('click', onWkwScore));
+    host.querySelectorAll('button[data-k="remove"]').forEach(el=>el.addEventListener('click', onWkwRemove));
+  }
+  function onWkwEdit(e){
+    const i=+e.target.dataset.i, k=e.target.dataset.k;
+    wkw.connections[i][k] = e.target.value;
+    persistWkw();
+  }
+  function onWkwScore(e){
+    const i=+e.target.dataset.i, s=e.target.dataset.s;
+    wkw.connections[i].score = s;
+    persistWkw(); renderWkw();
+  }
+  function onWkwRemove(e){
+    wkw.connections.splice(+e.target.dataset.i,1);
+    persistWkw(); renderWkw();
+  }
+  document.getElementById('wkw-email').addEventListener('input', (e)=>{
+    wkw.parentEmail = e.target.value;
+    document.getElementById('wkw-uuid').textContent = computeUuid(wkw.parentEmail) || "—";
+    persistWkw();
+  });
+  function addWkw(){
+    wkw.connections.push({ score:"1", name:"", email:"" });
+    persistWkw(); renderWkw();
+    const last = document.querySelector('#wkw-rows .wkw-row:last-child input[data-k="name"]');
+    last && last.focus();
+  }
+  function clearWkw(){ wkw.connections = []; persistWkw(); renderWkw(); toast('Cleared'); }
+  function generateWkw(){
+    const pool = [
+      { score:"1", name:"David Mallory",  email:"davidm@contoso.com" },
+      { score:"1", name:"Priya Ramanathan",email:"priya@contoso.com" },
+      { score:"2", name:"Alan Steiner",   email:"alans@contoso.com" },
+      { score:"2", name:"Nora Kim",       email:"norak@contoso.com" },
+      { score:"3", name:"Jamie Rivera",   email:"jamier@contoso.com" }
+    ];
+    wkw.connections = pool.slice(0,4);
+    persistWkw(); renderWkw(); toast('Sample data generated');
+  }
+  function copyWkwUuid(){
+    const u = computeUuid(wkw.parentEmail);
+    if (!u){ toast('No email — nothing to copy', true); return; }
+    (navigator.clipboard && navigator.clipboard.writeText(u).then(()=>toast('UUID copied'), ()=>toast('Copy failed', true))) || toast('UUID: '+u);
+  }
+  renderWkw();
+
+  function save(){
+    // In D365 this will build the msdyn_scorereasons JSON and upsert msdyn_salespremiumdemo.
+    const kpiResponse = {};
+    mc.byUs.forEach((r,i)=>{ const j=i+1; kpiResponse['McRelatedEntity'+j]=r.name; kpiResponse['McNumberOfEmails'+j]=r.emails; kpiResponse['McNumberOfMeetings'+j]=r.meetings; kpiResponse['McNumberOfPhoneCalls'+j]=r.phoneCalls; });
+    mc.byThem.forEach((r,i)=>{ const j=i+1; kpiResponse['McByRelatedEntity'+j]=r.name; kpiResponse['McByNumberOfEmails'+j]=r.emails; kpiResponse['McByNumberOfMeetings'+j]=r.meetings; kpiResponse['McByNumberOfPhoneCalls'+j]=r.phoneCalls; });
+    const payload = {
+      header: { score: head.score, grade: head.grade, trend: head.trend, scoredOn: head.scoredOn },
+      scoreReasons: { version:1.3, explanation: reasons.map(r=>({ special:{ influence:r.influence, value:r.value, weight:1.3, ttValue:{ special:{ value:r.tooltip } } } })) },
+      mostContacted: { KpiResponse: JSON.stringify(kpiResponse) }
+    };
+    console.log('Save payload:', payload);
+    toast('Saved (preview) — see console for payload');
+    setStatus('Last saved '+new Date().toLocaleTimeString());
+  }
+  function setStatus(t){ document.getElementById('status').textContent=t; }
+  function esc(s){ return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+  // ---- Toast ----
+  let toastT;
+  function toast(msg){
+    const t=document.getElementById('toast');
+    t.textContent=msg; t.classList.add('show');
+    clearTimeout(toastT);
+    toastT=setTimeout(()=>t.classList.remove('show'),1600);
+  }
+
+  // ---- JSON payload previews (mirrors the deployed tool's per-tab previews) ----
+  function buildScoreReasonsJsonPreview(){
+    return { version:1.3, explanation: reasons.map(r=>({ special:{ influence:r.influence?1:0, value:r.value||"", weight:1.3, ttValue:{ special:{ value:r.tooltip||"" } } } })) };
+  }
+  function buildMostContactedJsonPreview(){
+    const kpi = {};
+    (mc.byUs||[]).forEach((r,i)=>{ const j=i+1; kpi['McRelatedEntity'+j]=r.name||""; kpi['McNumberOfEmails'+j]=+r.emails||0; kpi['McNumberOfMeetings'+j]=+r.meetings||0; kpi['McNumberOfPhoneCalls'+j]=+r.phoneCalls||0; });
+    (mc.byThem||[]).forEach((r,i)=>{ const j=i+1; kpi['McByRelatedEntity'+j]=r.name||""; kpi['McByNumberOfEmails'+j]=+r.emails||0; kpi['McByNumberOfMeetings'+j]=+r.meetings||0; kpi['McByNumberOfPhoneCalls'+j]=+r.phoneCalls||0; });
+    // Envelope matches how msdyn_mostcontacted is stored on disk.
+    return { EntityId:"<entityid>", OrganizationId:"<orgid>", EntityType:"contact", KpiResponse: kpi };
+  }
+  function buildDayKpiJsonPreview(){
+    return (dayKpi||[]).map(d=>({
+      Date:d.date, EmailsIn:+d.emIn||0, EmailsOut:+d.emOut||0,
+      MeetingsIn:+d.mtgIn||0, MeetingsOut:+d.mtgOut||0,
+      PhoneCallsIn:+d.callIn||0, PhoneCallsOut:+d.callOut||0,
+      LinkedInEmailsOut:+d.liOut||0
+    }));
+  }
+  function buildWkwJsonPreview(){
+    // Stored RAW on disk — no Sales Premium envelope.
+    return {
+      Connections: (wkw.connections||[]).map(c=>({
+        ConnectionScore: String(c.score||"2"),
+        DisplayName: c.name||"",
+        EmailActivityId: null,
+        EmailAddress: c.email||"",
+        ExchangeRegion: null,
+        Image: "",
+        ResultId: "1"
+      })),
+      Uuid: computeUuid(wkw.parentEmail)
+    };
+  }
+  function refreshJsonPreviews(){
+    let t;
+    t = document.getElementById('jp-reasons'); if (t) t.value = JSON.stringify(buildScoreReasonsJsonPreview(), null, 2);
+    t = document.getElementById('jp-mc');      if (t) t.value = JSON.stringify(buildMostContactedJsonPreview(), null, 2);
+    t = document.getElementById('jp-day');     if (t) t.value = (dayKpi && dayKpi.length>0) ? JSON.stringify(buildDayKpiJsonPreview(), null, 2) : '(empty — will not be written on save)';
+    t = document.getElementById('jp-wkw');     if (t) t.value = (wkw.connections && wkw.connections.length>0) ? JSON.stringify(buildWkwJsonPreview(), null, 2) : '(empty — will not be written on save)';
+  }
+  document.querySelector('.body').addEventListener('input',  refreshJsonPreviews);
+  document.querySelector('.body').addEventListener('change', refreshJsonPreviews);
+  document.querySelector('.body').addEventListener('click',  (e)=>{ if (e.target && e.target.tagName==='BUTTON') setTimeout(refreshJsonPreviews,0); });
+  refreshJsonPreviews();
+</script>
+</body>
+</html>

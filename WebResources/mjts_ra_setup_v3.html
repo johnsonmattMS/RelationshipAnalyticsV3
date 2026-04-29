@@ -1,0 +1,2681 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<title>Relationship Analytics Setup V3</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><rect x='3' y='12' width='4' height='9' rx='1' fill='%230f6cbd'/><rect x='10' y='7' width='4' height='14' rx='1' fill='%230f6cbd'/><rect x='17' y='3' width='4' height='18' rx='1' fill='%230f6cbd'/></svg>" />
+<style>
+  :root{
+    --bg:#f3f2f1; --panel:#ffffff; --border:#e1dfdd; --border-strong:#c8c6c4;
+    --text:#201f1e; --subtle:#605e5c; --brand:#0f6cbd; --brand-hover:#115ea3;
+    --danger:#a4262c; --success:#107c10;
+    --chip:#f3f2f1; --chip-hover:#edebe9;
+    --shadow:0 1.6px 3.6px rgba(0,0,0,.08), 0 0.3px 0.9px rgba(0,0,0,.06);
+    --radius:6px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--panel);font:14px/1.45 "Segoe UI",system-ui,sans-serif;color:var(--text)}
+  .app{display:flex;flex-direction:column;height:100vh}
+
+  header.app-head{display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid var(--border)}
+  header.app-head .title{flex:1}
+  header.app-head h1{font-size:16px;margin:0}
+  header.app-head .sub{color:var(--subtle);font-size:12.5px;margin-top:2px}
+  header.app-head .icon{width:28px;height:28px;border-radius:4px;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700}
+  header.app-head .icon svg{width:18px;height:18px;display:block}
+  .ctx{display:inline-flex;align-items:center;gap:8px;background:#eff6fc;color:var(--brand);padding:4px 10px;border-radius:12px;font-size:12.5px;font-weight:600}
+  .ctx .dot{width:6px;height:6px;border-radius:50%;background:var(--brand)}
+
+  nav.tabs{display:flex;gap:2px;border-bottom:1px solid var(--border);padding:0 12px;overflow-x:auto;background:#fafafa}
+  .tab{padding:12px 14px;font-weight:600;color:var(--subtle);border:none;background:transparent;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
+  .tab:hover{color:var(--text)}
+  .tab.active{color:var(--brand);border-bottom-color:var(--brand)}
+  .tab[disabled]{color:#a19f9d;cursor:not-allowed}
+  .tab .pill{display:inline-block;font-size:10.5px;font-weight:700;background:#eff6fc;color:var(--brand);padding:1px 6px;border-radius:10px;margin-left:6px;vertical-align:1px}
+  .tab[disabled] .pill{background:var(--chip);color:var(--subtle)}
+
+  .body{flex:1;overflow:auto;padding:18px 20px}
+  .intro{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:12px}
+  .intro h2{font-size:15px;margin:0}
+  .intro .hint{color:var(--subtle);font-size:12.5px;max-width:620px}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap}
+
+  .foot{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 20px;border-top:1px solid var(--border);background:#fafafa}
+  .foot .status{color:var(--subtle);font-size:12.5px}
+  .foot .actions{display:flex;gap:8px}
+
+  button.btn{font:inherit;border-radius:4px;padding:7px 14px;cursor:pointer;border:1px solid var(--border-strong);background:var(--panel);color:var(--text)}
+  button.btn:hover{background:var(--chip-hover)}
+  button.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+  button.btn.primary:hover{background:var(--brand-hover);border-color:var(--brand-hover)}
+  button.btn.primary:disabled{background:#a19f9d;border-color:#a19f9d;cursor:default}
+  button.btn.danger{color:var(--danger);border-color:transparent;background:transparent;padding:4px 6px}
+  button.btn.danger:hover{background:#fde7e9}
+  button.btn.sm{padding:4px 10px;font-size:12.5px}
+
+  .scorehead{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;padding:14px;background:#fbfafa;border:1px solid var(--border);border-radius:4px}
+  .fld{display:flex;flex-direction:column;gap:4px}
+  .fld label{font-size:11.5px;color:var(--subtle);text-transform:uppercase;letter-spacing:.3px;font-weight:600}
+  .fld input,.fld select{border:1px solid var(--border);border-radius:3px;padding:6px 8px;background:#fff;font:inherit}
+  .fld input:focus,.fld select:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 1px var(--brand)}
+  .fld .score-wrap{display:flex;align-items:center;gap:8px}
+  .fld .score-wrap input{flex:1}
+  .fld .grade{font-weight:700;color:var(--brand);min-width:56px;text-align:center;font-size:12.5px;white-space:nowrap}
+  .trend{display:flex;gap:4px}
+  .trend button{flex:1;border:1px solid var(--border);background:#fff;border-radius:3px;padding:6px;cursor:pointer;font:inherit;color:var(--subtle);font-size:12px}
+  .trend button.on{background:var(--brand);border-color:var(--brand);color:#fff}
+
+  .rows{display:flex;flex-direction:column;gap:6px}
+  .rowhdr,.row{display:grid;grid-template-columns:110px 1fr 1fr 32px;gap:10px;align-items:center}
+  .rowhdr{padding:6px 10px;font-size:12px;color:var(--subtle);font-weight:600;text-transform:uppercase;letter-spacing:.3px}
+  .row{background:#fbfafa;border:1px solid var(--border);border-radius:4px;padding:8px 10px}
+  .row input[type=text]{width:100%;border:1px solid var(--border);border-radius:3px;padding:6px 8px;background:#fff;font:inherit}
+  .row input[type=text]:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 1px var(--brand)}
+  .influence{display:flex;align-items:center;gap:8px}
+  .switch{position:relative;display:inline-block;width:34px;height:18px}
+  .switch input{opacity:0;width:0;height:0}
+  .slider{position:absolute;inset:0;background:#c8c6c4;border-radius:18px;cursor:pointer;transition:.15s}
+  .slider::before{content:"";position:absolute;width:14px;height:14px;left:2px;top:2px;background:#fff;border-radius:50%;transition:.15s}
+  .switch input:checked + .slider{background:var(--success)}
+  .switch input:checked + .slider::before{transform:translateX(16px)}
+  .influence .lbl{font-size:12.5px;color:var(--subtle);min-width:56px}
+  .empty{border:1px dashed var(--border-strong);border-radius:4px;padding:28px;text-align:center;color:var(--subtle)}
+
+  .stub{border:1px dashed var(--border-strong);border-radius:4px;padding:40px 20px;text-align:center;color:var(--subtle)}
+  .stub h3{margin:0 0 6px;color:var(--text);font-size:15px}
+  .stub .step{display:inline-block;background:var(--chip);padding:2px 10px;border-radius:10px;font-size:12px;margin-top:8px}
+
+  .mc-group{margin-bottom:18px}
+  .mc-group h3{font-size:13px;margin:0 0 6px;color:var(--text)}
+  .mc-group .sub{font-size:12px;color:var(--subtle);margin-bottom:8px}
+  .mc-hdr,.mc-row{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr 32px;gap:8px;align-items:center}
+  .mc-hdr.adv,.mc-row.adv{grid-template-columns:1.4fr 1.4fr 1fr 1fr 1fr 32px}
+  .mc-hdr{padding:4px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.3px;color:var(--subtle);font-weight:600}
+  .mc-row{background:#fbfafa;border:1px solid var(--border);border-radius:4px;padding:8px 10px;margin-bottom:6px}
+  .mc-row input{border:1px solid var(--border);border-radius:3px;padding:6px 8px;background:#fff;font:inherit;width:100%}
+  .mc-row input:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 1px var(--brand)}
+  .mc-row input.guid{font-family:Consolas,monospace;font-size:11.5px}
+  .mc-row input.guid.invalid{border-color:var(--danger);background:#fde7e9}
+  .mc-hdr .guid-col,.mc-row .guid-col{display:none}
+  .mc-section.adv .mc-hdr .guid-col,.mc-section.adv .mc-row .guid-col{display:block}
+  .mc-toggle{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--subtle);cursor:pointer;user-select:none}
+  .mc-toggle input{margin:0}
+  .name-wrap{display:flex;align-items:center;gap:8px}
+  .name-wrap .avatar{width:28px;height:28px;border-radius:50%;background:#2b8a78;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:11px;flex-shrink:0}
+
+  /* Day KPIs */
+  .dk-hdr,.dk-row{display:grid;grid-template-columns:110px repeat(7, 1fr) 32px;gap:6px;align-items:center}
+  .dk-hdr{padding:4px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.3px;color:var(--subtle);font-weight:600}
+  .dk-row{background:#fbfafa;border:1px solid var(--border);border-radius:4px;padding:6px 10px;margin-bottom:4px}
+  .dk-row input[type=number]{border:1px solid var(--border);border-radius:3px;padding:5px 6px;background:#fff;font:inherit;width:100%;text-align:right}
+  .dk-row input[type=number]:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 1px var(--brand)}
+  .dk-row .date{font-size:12.5px;color:var(--text);font-variant-numeric:tabular-nums}
+  .dk-row .date .dow{color:var(--subtle);margin-left:4px;font-size:11.5px}
+  .dk-row .date.weekend{color:var(--subtle)}
+  .dk-summary{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:12px;padding:10px 12px;background:#fbfafa;border:1px solid var(--border);border-radius:4px}
+  .dk-summary .cell{display:flex;flex-direction:column;gap:2px}
+  .dk-summary .cell .lbl{font-size:10.5px;text-transform:uppercase;letter-spacing:.3px;color:var(--subtle);font-weight:600}
+  .dk-summary .cell .val{font-size:16px;font-weight:600;color:var(--text);font-variant-numeric:tabular-nums}
+
+  /* Who knows whom */
+  .wkw-head{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;padding:12px 14px;background:#fbfafa;border:1px solid var(--border);border-radius:4px}
+  .wkw-uuid{font-family:Consolas,monospace;font-size:12px;color:var(--subtle);background:#fff;border:1px solid var(--border);border-radius:3px;padding:6px 8px;display:flex;align-items:center;gap:6px}
+  .wkw-uuid code{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)}
+  .wkw-hdr,.wkw-row{display:grid;grid-template-columns:160px 1.4fr 1.4fr 32px;gap:8px;align-items:center}
+  .wkw-hdr{padding:4px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.3px;color:var(--subtle);font-weight:600}
+  .wkw-row{background:#fbfafa;border:1px solid var(--border);border-radius:4px;padding:8px 10px;margin-bottom:6px}
+  .wkw-row input{border:1px solid var(--border);border-radius:3px;padding:6px 8px;background:#fff;font:inherit;width:100%}
+  .wkw-row input:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 1px var(--brand)}
+  .wkw-score{display:flex;gap:4px}
+  .wkw-score button{flex:1;border:1px solid var(--border);background:#fff;border-radius:3px;padding:5px;cursor:pointer;font:inherit;color:var(--subtle);font-size:12px}
+  .wkw-score button.on[data-s="1"]{background:var(--success);border-color:var(--success);color:#fff}
+  .wkw-score button.on[data-s="2"]{background:#8a6d00;border-color:#8a6d00;color:#fff}
+  .wkw-score button.on[data-s="3"]{background:var(--danger);border-color:var(--danger);color:#fff}
+
+  /* Lifetime KPIs */
+  .life-h3{font-size:12px;text-transform:uppercase;letter-spacing:.4px;color:var(--subtle);font-weight:700;margin:14px 0 6px}
+  .life-h3:first-of-type{margin-top:0}
+  .life-head{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:6px;padding:14px;background:#fbfafa;border:1px solid var(--border);border-radius:4px}
+  .life-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:12px;background:#fff;border:1px solid var(--border);border-radius:4px;margin-bottom:6px}
+  .life-grid .fld input{width:100%}
+
+  /* Similar won deals */
+  .sim-hdr,.sim-row{display:grid;grid-template-columns:1.6fr 1.4fr repeat(4, .8fr) 32px;gap:8px;align-items:center}
+  .sim-hdr{padding:4px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.3px;color:var(--subtle);font-weight:600}
+  .sim-row{background:#fbfafa;border:1px solid var(--border);border-radius:4px;padding:8px 10px;margin-bottom:6px}
+  .sim-row input{border:1px solid var(--border);border-radius:3px;padding:6px 8px;background:#fff;font:inherit;width:100%}
+  .sim-row input:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 1px var(--brand)}
+  .sim-row input.guid{font-family:Consolas,monospace;font-size:11.5px}
+  .sim-metric{font-size:12.5px;color:var(--text);background:#fff;border:1px solid var(--border);border-radius:3px;padding:6px 8px;min-height:30px;display:flex;align-items:center;justify-content:flex-end;font-variant-numeric:tabular-nums}
+  .sim-metric.empty{color:var(--subtle)}
+  .sim-note{margin:0 0 10px;padding:10px 12px;background:#fff8e1;border:1px solid #e5c76b;border-radius:4px;color:#5f4b00;font-size:12.5px;line-height:1.4}
+
+  /* Utilities */
+  .util-card{border:1px solid var(--border);border-radius:4px;background:#fbfafa;margin-bottom:14px}
+  .util-card .util-body{padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+  .util-card h3{margin:0;font-size:14px;color:var(--text)}
+  .util-card .hint{color:var(--subtle);font-size:12.5px;max-width:760px}
+  .util-card .util-controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:4px}
+  .util-card .util-status{font-size:12px;color:var(--subtle);min-height:16px}
+  .util-card.util-danger{border-color:#e8b8b8;background:#fdf6f6}
+  .util-confirm{font-size:12.5px;color:var(--subtle);display:flex;align-items:center;gap:6px;cursor:pointer}
+  .util-card.disabled{opacity:.55}
+  .util-card.disabled button{pointer-events:none}
+
+  /* JSON preview */
+  .json-preview{margin-top:20px;border-top:1px solid var(--border);padding-top:12px}
+  .json-preview .jp-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+  .json-preview .jp-hdr label{font-size:11px;text-transform:uppercase;letter-spacing:.3px;color:var(--subtle);font-weight:600;margin:0}
+  .json-preview .jp-field{font-family:Consolas,monospace;font-size:11px;color:var(--subtle)}
+  .json-preview .jp-actions{display:flex;align-items:center;gap:8px}
+  .json-preview .jp-badge{display:none;font-size:10.5px;color:#fff;background:var(--brand);padding:1px 8px;border-radius:10px;font-weight:600}
+  .json-preview.dirty .jp-badge{display:inline-block}
+  .json-preview textarea{width:100%;min-height:140px;max-height:280px;font-family:Consolas,monospace;font-size:11px;line-height:1.4;background:#fbfafa;border:1px solid var(--border);border-radius:3px;padding:8px 10px;color:var(--text);resize:vertical;white-space:pre;overflow:auto}
+  .json-preview textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 1px var(--brand)}
+  .json-preview.dirty textarea{background:#fff8e0;border-color:#d8a800}
+  .json-preview.invalid textarea{background:#fdeaea;border-color:var(--danger)}
+
+  .loading,.loaderr{padding:40px;text-align:center;color:var(--subtle)}
+  .loaderr{color:var(--danger)}
+
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--text);color:#fff;padding:10px 18px;border-radius:4px;font-size:13px;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .2s;z-index:10}
+  .toast.show{opacity:1}
+  .toast.error{background:var(--danger)}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="app-head">
+    <div class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="7" width="4" height="14" rx="1"/><rect x="17" y="3" width="4" height="18" rx="1"/></svg></div>
+    <div class="title">
+      <h1>Relationship Analytics Setup V3</h1>
+      <div class="sub">Configure mock Sales Premium / Relationship Analytics data for this record <span style="color:#888;font-size:11px">(v3.0 isolated-save)</span></div>
+    </div>
+    <span class="ctx" id="ctxChip" hidden><span class="dot"></span><span id="ctxText"></span></span>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab active" role="tab" data-tab="score">Score reasons</button>
+    <button class="tab" role="tab" data-tab="mc">Most contacted</button>
+    <button class="tab" role="tab" data-tab="day">Day KPIs</button>
+    <button class="tab" role="tab" data-tab="wkw">Who knows whom</button>
+    <button class="tab" role="tab" data-tab="life">Lifetime KPIs</button>
+    <button class="tab" role="tab" data-tab="similar" data-opportunity-only hidden>Similar won deals</button>
+    <button class="tab" role="tab" data-tab="util">Utilities</button>
+  </nav>
+
+  <section class="body">
+    <div id="loading" class="loading">Loading…</div>
+    <div id="loaderr" class="loaderr" hidden></div>
+
+    <div class="pane" data-pane="score" hidden>
+      <div class="intro">
+        <div>
+          <h2>Predictive score</h2>
+          <div class="hint">Top-level score shown on the record, plus the reasons that explain it.</div>
+        </div>
+      </div>
+
+      <div class="scorehead">
+        <div class="fld">
+          <label for="f-score">Score</label>
+          <div class="score-wrap">
+            <input id="f-score" type="number" min="0" max="100" step="1" />
+            <span class="grade" id="f-grade-out"></span>
+          </div>
+        </div>
+        <div class="fld">
+          <label for="f-grade">Grade</label>
+          <select id="f-grade">
+            <option value="0">Grade A</option>
+            <option value="1">Grade B</option>
+            <option value="2">Grade C</option>
+            <option value="3">Grade D</option>
+          </select>
+        </div>
+        <div class="fld">
+          <label>Score trend</label>
+          <div class="trend" role="group" aria-label="Score trend">
+            <button type="button" data-trend="0">▲ Improving</button>
+            <button type="button" data-trend="1">— Steady</button>
+            <button type="button" data-trend="2">▼ Declining</button>
+            <button type="button" data-trend="3">? Not enough info</button>
+          </div>
+        </div>
+        <div class="fld">
+          <label for="f-scoredon">Scored on</label>
+          <input id="f-scoredon" type="datetime-local" step="60" />
+        </div>
+      </div>
+
+      <div class="intro">
+        <div>
+          <h2>Score reasons</h2>
+          <div class="hint">Each row appears as a reason under the predictive score. Positive pushes the score up; negative pushes it down.</div>
+        </div>
+        <div class="toolbar">
+          <button class="btn sm" id="btn-generate">Generate score reasons</button>
+          <button class="btn sm primary" id="btn-add">+ Add reason</button>
+        </div>
+      </div>
+
+      <div class="rowhdr"><div>Influence</div><div>Reason</div><div>Tooltip</div><div></div></div>
+      <div class="rows" id="rows"></div>
+      <div id="empty" class="empty" hidden>No score reasons yet. Click <b>+ Add reason</b>.</div>
+      <div class="json-preview" data-jp="reasons"><div class="jp-hdr"><label>JSON payload <span class="jp-field">msdyn_scorereasons</span></label><div class="jp-actions"><span class="jp-badge">edited — will be saved as-is</span><button type="button" class="btn sm" data-jp-reset="reasons">Reset</button></div></div><textarea id="jp-reasons" spellcheck="false"></textarea></div>
+    </div>
+
+    <div class="pane" data-pane="mc" hidden>
+      <div class="intro">
+        <div>
+          <h2>Most contacted</h2>
+          <div class="hint">Top 3 people the team contacted most, and the top 3 who reached back most. Leave a row blank to hide it from the record.</div>
+        </div>
+        <div class="toolbar">
+          <label class="mc-toggle"><input type="checkbox" id="chk-mc-adv"> Show record IDs</label>
+          <button class="btn sm" id="btn-mc-clear">Clear all</button>
+          <button class="btn sm" id="btn-mc-generate">Generate sample data</button>
+        </div>
+      </div>
+      <div class="mc-group mc-section" id="mc-section-us">
+        <h3 id="mc-us-title">Contacts at this customer</h3>
+        <div class="sub">Top 3 external contacts engaged with this record. These populate the external contacts section of the Sales Premium visual.</div>
+        <div class="mc-hdr"><div>Contact</div><div class="guid-col">Contact ID</div><div>Emails</div><div>Meetings</div><div>Phone calls</div><div></div></div>
+        <div id="mc-by-us"></div>
+      </div>
+      <div class="mc-group mc-section" id="mc-section-them">
+        <h3>Your colleagues</h3>
+        <div class="sub">Top 3 internal users active on this record. These show up under “Your colleagues” in the Sales Premium visual.</div>
+        <div class="mc-hdr"><div>Colleague</div><div class="guid-col">User ID</div><div>Emails</div><div>Meetings</div><div>Phone calls</div><div></div></div>
+        <div id="mc-by-them"></div>
+      </div>
+      <datalist id="dl-contacts"></datalist>
+      <datalist id="dl-users"></datalist>
+      <div class="json-preview" data-jp="mc"><div class="jp-hdr"><label>JSON payload <span class="jp-field">msdyn_mostcontacted • KpiResponse inner</span></label><div class="jp-actions"><span class="jp-badge">edited — will be saved as-is</span><button type="button" class="btn sm" data-jp-reset="mc">Reset</button></div></div><textarea id="jp-mc" spellcheck="false"></textarea></div>
+    </div>
+    <div class="pane" data-pane="day"  hidden>
+      <div class="intro">
+        <div>
+          <h2>Day KPIs</h2>
+          <div class="hint">Per-day email / meeting / call counts that feed the activity trend chart. Dates are anchored to today.</div>
+        </div>
+        <div class="toolbar">
+          <label class="fld" style="flex-direction:row;align-items:center;gap:6px;font-size:12.5px">
+            <span>Range</span>
+            <select id="dk-range">
+              <option value="7">Last 7 days</option>
+              <option value="30" selected>Last 30 days</option>
+              <option value="90">Last 90 days</option>
+            </select>
+          </label>
+          <button class="btn sm" id="btn-dk-clear">Clear all</button>
+          <button class="btn sm primary" id="btn-dk-generate">Generate sample data</button>
+        </div>
+      </div>
+      <div class="dk-summary" id="dk-summary"></div>
+      <div class="dk-hdr">
+        <div>Date</div>
+        <div title="Emails received">Em in</div>
+        <div title="Emails sent">Em out</div>
+        <div title="Meetings received">Mtg in</div>
+        <div title="Meetings sent">Mtg out</div>
+        <div title="Phone calls received">Call in</div>
+        <div title="Phone calls made">Call out</div>
+        <div title="LinkedIn emails sent">LI out</div>
+        <div></div>
+      </div>
+      <div class="dk-rows" id="dk-rows"></div>
+      <div id="dk-empty" class="empty" hidden>No day KPIs yet. Click <b>Generate sample data</b>.</div>
+      <div class="json-preview" data-jp="day"><div class="jp-hdr"><label>JSON payload <span class="jp-field">msdyn_relationshipanalyticsdaykpi • KpiResponse inner</span></label><div class="jp-actions"><span class="jp-badge">edited — will be saved as-is</span><button type="button" class="btn sm" data-jp-reset="day">Reset</button></div></div><textarea id="jp-day" spellcheck="false"></textarea></div>
+    </div>
+    <div class="pane" data-pane="wkw"  hidden>
+      <div class="intro">
+        <div>
+          <h2>Who knows whom</h2>
+          <div class="hint">Internal colleagues who have a strong / fair / weak tie to this record. The parent record’s email is hashed to a UUID (v3/DNS) that keys the stored data. Saving will also remove any stale rows from the record's visualization.</div>
+        </div>
+        <div class="toolbar">
+          <button class="btn sm" id="btn-wkw-clear">Clear all</button>
+          <button class="btn sm" id="btn-wkw-generate">Generate sample data</button>
+          <button class="btn sm primary" id="btn-wkw-add">+ Add connection</button>
+        </div>
+      </div>
+      <div class="wkw-head">
+        <div class="fld">
+          <label for="wkw-email">Parent record email</label>
+          <input id="wkw-email" type="email" placeholder="name@contoso.com">
+        </div>
+        <div class="fld">
+          <label>Computed UUID (v3 / DNS)</label>
+          <div class="wkw-uuid"><code id="wkw-uuid">—</code><button class="btn sm" id="btn-wkw-copy">Copy</button></div>
+        </div>
+      </div>
+      <div id="wkw-skip-warning" class="hint" style="color:#a40;display:none;margin:6px 0 10px">No parent email — Who-knows-whom data will <b>not</b> be saved (Microsoft's plugin requires a UUID derived from the record's email).</div>
+      <div class="wkw-hdr"><div>Connection score</div><div>Display name</div><div>Email address</div><div></div></div>
+      <div id="wkw-rows"></div>
+      <div id="wkw-empty" class="empty" hidden>No connections yet. Click <b>+ Add connection</b> or <b>Generate sample data</b>.</div>
+      <datalist id="dl-wkw-users"></datalist>
+      <div class="json-preview" data-jp="wkw"><div class="jp-hdr"><label>JSON payload <span class="jp-field">msdyn_wkwjson</span></label><div class="jp-actions"><span class="jp-badge">edited — will be saved as-is</span><button type="button" class="btn sm" data-jp-reset="wkw">Reset</button></div></div><textarea id="jp-wkw" spellcheck="false"></textarea></div>
+    </div>
+    <div class="pane" data-pane="life" hidden>
+      <div class="intro">
+        <div>
+          <h2>Lifetime KPIs</h2>
+          <div class="hint">Rolled-up engagement totals shown on the Sales Insights / Relationship Analytics tile. Drives the health score, trend and the activity counters across the lifetime of the relationship.</div>
+        </div>
+        <div class="toolbar">
+          <button class="btn sm" id="btn-life-clear">Clear all</button>
+          <button class="btn sm primary" id="btn-life-generate">Generate sample data</button>
+        </div>
+      </div>
+
+      <h3 class="life-h3">Relationship health</h3>
+      <div class="life-head">
+        <div class="fld">
+          <label for="f-life-state">Health state</label>
+          <select id="f-life-state">
+            <option value="0">Healthy</option>
+            <option value="1">At risk</option>
+            <option value="2">Poor</option>
+          </select>
+        </div>
+        <div class="fld">
+          <label for="f-life-trend">Health trend</label>
+          <select id="f-life-trend">
+            <option value="0">Improving</option>
+            <option value="1">Steady</option>
+            <option value="2">Declining</option>
+          </select>
+        </div>
+        <div class="fld">
+          <label for="f-life-byteam">Time by team (mins)</label>
+          <input id="f-life-byteam" type="number" min="0" step="1">
+        </div>
+        <div class="fld">
+          <label for="f-life-bycust">Time by customer (mins)</label>
+          <input id="f-life-bycust" type="number" min="0" step="1">
+        </div>
+      </div>
+
+      <h3 class="life-h3">Activity totals</h3>
+      <div class="life-grid">
+        <div class="fld"><label for="f-life-emailsout">Emails sent</label><input id="f-life-emailsout" type="number" min="0" step="1"></div>
+        <div class="fld"><label for="f-life-emailsin">Emails received</label><input id="f-life-emailsin" type="number" min="0" step="1"></div>
+        <div class="fld"><label for="f-life-meetingsout">Meetings sent</label><input id="f-life-meetingsout" type="number" min="0" step="1"></div>
+        <div class="fld"><label for="f-life-meetingsin">Meetings received</label><input id="f-life-meetingsin" type="number" min="0" step="1"></div>
+        <div class="fld"><label for="f-life-callsout">Phone calls made</label><input id="f-life-callsout" type="number" min="0" step="1"></div>
+        <div class="fld"><label for="f-life-callsin">Phone calls received</label><input id="f-life-callsin" type="number" min="0" step="1"></div>
+        <div class="fld"><label for="f-life-liout">LinkedIn emails sent</label><input id="f-life-liout" type="number" min="0" step="1"></div>
+        <div class="fld"><label for="f-life-facetime">Face time w/ customer (mins)</label><input id="f-life-facetime" type="number" min="0" step="1"></div>
+      </div>
+
+      <h3 class="life-h3">Engagement &amp; response</h3>
+      <div class="life-grid">
+        <div class="fld"><label for="f-life-opened">Opened emails (0–1)</label><input id="f-life-opened" type="number" min="0" max="1" step="0.01"></div>
+        <div class="fld"><label for="f-life-clicks">Links clicked (0–1)</label><input id="f-life-clicks" type="number" min="0" max="1" step="0.01"></div>
+        <div class="fld"><label for="f-life-attach">Attachments opened (0–1)</label><input id="f-life-attach" type="number" min="0" max="1" step="0.01"></div>
+        <div class="fld"><label for="f-life-rrthem">Response rate by them (0–1)</label><input id="f-life-rrthem" type="number" min="0" max="1" step="0.01"></div>
+        <div class="fld"><label for="f-life-rrus">Response rate by us (0–1)</label><input id="f-life-rrus" type="number" min="0" max="1" step="0.01"></div>
+        <div class="fld"><label for="f-life-frtthem">Avg first response by them (hrs)</label><input id="f-life-frtthem" type="number" min="0" step="0.1"></div>
+        <div class="fld"><label for="f-life-frtus">Avg first response by us (hrs)</label><input id="f-life-frtus" type="number" min="0" step="0.1"></div>
+      </div>
+
+      <div class="json-preview" data-jp="life"><div class="jp-hdr"><label>JSON payload <span class="jp-field">msdyn_relationshipanalyticskpijson</span></label><div class="jp-actions"><span class="jp-badge">edited — will be saved as-is</span><button type="button" class="btn sm" data-jp-reset="life">Reset</button></div></div><textarea id="jp-life" spellcheck="false"></textarea></div>
+    </div>
+
+    <div class="pane" data-pane="similar" data-opportunity-only hidden>
+      <div class="intro">
+        <div>
+          <h2>Similar won deals</h2>
+          <div class="hint">Pick won opportunities to populate the Similar won deals section of the Opportunity Relationship Analytics visual.</div>
+        </div>
+        <div class="toolbar">
+          <button class="btn sm" id="btn-sim-clear">Clear all</button>
+          <button class="btn sm primary" id="btn-sim-generate">Pick sample won deals</button>
+        </div>
+      </div>
+      <div class="sim-note">The metric columns below are read from each selected won opportunity's own Relationship Analytics KPI data. If the Opportunity visual shows zero activities or Not available for these rows, open each selected won opportunity and run this setup tool there as well.</div>
+      <div class="sim-hdr"><div>Won opportunity</div><div>Opportunity ID</div><div>Activities</div><div>Calls</div><div>Team mins</div><div>Face mins</div><div></div></div>
+      <div id="similar-rows"></div>
+      <datalist id="dl-won-opportunities"></datalist>
+    </div>
+
+    <div class="pane" data-pane="util" hidden>
+      <div class="intro">
+        <div>
+          <h2>Utilities</h2>
+          <div class="hint">One-off maintenance actions for this record. These run immediately and don’t require a Save — use them when you need to reset or refresh demo data without filling in every tab again.</div>
+        </div>
+      </div>
+
+      <div class="util-card" id="util-card-dates">
+        <div class="util-body">
+          <h3>Roll close date forward</h3>
+          <div class="hint">Sets <code>estimatedclosedate</code> on this opportunity to today + N days so the record looks current in demos. Only available on opportunity records.</div>
+          <div class="util-controls">
+            <label class="fld" style="flex-direction:row;align-items:center;gap:6px;font-size:12.5px">
+              <span>Days from today</span>
+              <input id="util-dates-days" type="number" min="0" step="1" value="30" style="width:80px">
+            </label>
+            <button class="btn sm primary" id="btn-util-rolldates">Roll forward</button>
+          </div>
+          <div class="util-status" id="util-dates-status">&nbsp;</div>
+        </div>
+      </div>
+
+      <div class="util-card util-danger">
+        <div class="util-body">
+          <h3>Wipe all demo data for this record</h3>
+          <div class="hint">Deletes the <code>msdyn_salespremiumdemo</code> row plus every related lifetime / daily KPI / most-contacted / WKW row that points at this record. On opportunities, it also clears won-opportunity KPI rows loaded for Similar won comparisons, because those rows can still feed the visual after this record is wiped. A blank replacement row is then created so the native Sales Premium visual does not fall back to stale sample data.</div>
+          <div class="util-controls">
+            <label class="util-confirm"><input type="checkbox" id="util-wipe-confirm"> I understand this is destructive</label>
+            <button class="btn sm danger" id="btn-util-wipe" disabled>Wipe demo data</button>
+          </div>
+          <div class="util-status" id="util-wipe-status">&nbsp;</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div id="save-debug" hidden style="margin:12px 24px;padding:12px;border:1px solid #c33;border-radius:6px;background:#fff5f5;color:#600;font-family:Consolas,monospace;font-size:11px;white-space:pre-wrap;word-break:break-all;max-height:240px;overflow:auto"></div>
+
+  <footer class="foot">
+    <div class="status" id="status">&nbsp;</div>
+    <div class="actions">
+      <button class="btn" id="btn-cancel">Close</button>
+      <button class="btn primary" id="btn-save" disabled>Save</button>
+    </div>
+  </footer>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  var GRADE_LABELS = { 0:"Grade A", 1:"Grade B", 2:"Grade C", 3:"Grade D" };
+
+  var POSITIVE_REASONS = [
+    { value:"Active engagement in last 30 days", tooltip:"Multiple inbound emails and meetings in the last month." },
+    { value:"Matches ideal customer profile",    tooltip:"Industry, size and region all match the ICP." },
+    { value:"Strong executive sponsorship",      tooltip:"Senior stakeholder has attended recent meetings." },
+    { value:"Budget confirmed for this quarter", tooltip:"Customer has confirmed allocated budget in the current quarter." },
+    { value:"Responds within 24 hours on average", tooltip:"Average first-response time is under one business day." }
+  ];
+  var NEGATIVE_REASONS = [
+    { value:"No response to last 3 emails",         tooltip:"Recipient has not replied to the last three outbound messages." },
+    { value:"Decision maker recently changed",      tooltip:"Primary contact left the company within the last 60 days." },
+    { value:"Competitor recently contacted",        tooltip:"Activity suggests a competitor is actively engaged." },
+    { value:"Opportunity stalled for over 30 days", tooltip:"No stage progression or activity in the last month." },
+    { value:"Budget on hold",                       tooltip:"Customer flagged that purchasing is temporarily frozen." }
+  ];
+  function sampleN(arr, n){
+    var copy = arr.slice();
+    for (var i=copy.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=copy[i]; copy[i]=copy[j]; copy[j]=t; }
+    return copy.slice(0,n);
+  }
+
+  function nowLocalDT(){
+    var d = new Date();
+    function pad(n){ return (n<10?"0":"")+n; }
+    return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+"T"+pad(d.getHours())+":"+pad(d.getMinutes());
+  }
+
+  // ---- Parent context (from query string) ----
+  function getParentContext() {
+    var params = {};
+    var raw = window.location.search || "";
+    // Xrm may wrap params in a "data" query param — unwrap
+    var m = /[?&]data=([^&]+)/.exec(raw);
+    var qs = m ? decodeURIComponent(m[1]) : raw.replace(/^\?/, "");
+    qs.split("&").forEach(function (kv) {
+      if (!kv) return;
+      var parts = kv.split("=");
+      params[decodeURIComponent(parts[0])] = decodeURIComponent(parts[1] || "");
+    });
+    return {
+      entityId: (params.entityId || "").toLowerCase(),
+      entityName: (params.entityName || "").toLowerCase()
+    };
+  }
+
+  var ctx = getParentContext();
+  var Xrm = window.parent && window.parent.Xrm ? window.parent.Xrm : window.Xrm;
+
+  function getOrgId() {
+    try {
+      var gc = Xrm && Xrm.Utility && Xrm.Utility.getGlobalContext ? Xrm.Utility.getGlobalContext() : null;
+      if (!gc) return state.organizationId || "";
+      var id = (gc.organizationSettings && gc.organizationSettings.organizationId)
+            || (gc.userSettings && gc.userSettings.organizationId)
+            || (typeof gc.getOrgUniqueName === "function" ? "" : "")
+            || state.organizationId
+            || "";
+      return (id || "").replace(/[{}]/g, "").toLowerCase();
+    } catch (e) { return state.organizationId || ""; }
+  }
+
+  var SAMPLE_NAMES = [
+    "Alicia Torres","Brandon Lee","Carla Mendez","Darius Okonkwo","Emma Fischer",
+    "Farid Nasser","Grace Liu","Henrik Sorensen","Isla Kowalski","Julian Rossi",
+    "Keiko Tanaka","Leo Martin","Mina Park","Noah Bennett","Olivia Schmidt"
+  ];
+  // Row shape: { id: <guid|"">, name: <string>, emails, meetings, phoneCalls }
+  function blankMcRows(n){ var a=[]; for(var i=0;i<n;i++) a.push({id:"",name:"",emails:0,meetings:0,phoneCalls:0}); return a; }
+  function blankSimilarRows(n){ var a=[]; for(var i=0;i<n;i++) a.push(blankSimilarRow()); return a; }
+  function initialsOf(name){
+    var parts = String(name||"").split(/\s+/).filter(Boolean);
+    if (!parts.length) return "?";
+    return (parts[0][0] + (parts[1] ? parts[1][0] : "")).toUpperCase();
+  }
+
+  var state = {
+    demoRecordId: null,      // existing msdyn_salespremiumdemoid
+    organizationId: "",      // filled from retrieve or global context
+    head: { score: 78, grade: 1, trend: 1, scoredOn: nowLocalDT() },
+    reasons: [],
+    mc: { byUs: blankMcRows(3), byThem: blankMcRows(3) },
+    mcAdvanced: false,       // toggle: show raw record IDs alongside names
+    contacts: [],            // [{id,name}] — external people (customer side)
+    users: [],               // [{id,name}] — internal colleagues
+    wonOpportunities: [],     // [{id,name}] — Opportunity-only similar won deals picker
+    similarWon: blankSimilarRows(3),
+    lifetime: {
+      // Header fields stored as native columns.
+      healthState: null, healthTrend: null, timeByTeam: null, timeByCust: null,
+      // The rest live inside msdyn_relationshipanalyticskpijson.
+      emailsOut: null, emailsIn: null,
+      meetingsOut: null, meetingsIn: null,
+      callsOut: null, callsIn: null,
+      liOut: null,
+      faceTime: null,
+      opened: null, clicks: null, attach: null,
+      rrThem: null, rrUs: null,
+      frtThem: null, frtUs: null
+    },
+    dayKpi: [],              // [{day:"YYYY-MM-DD", emailsIn, emailsOut, meetingsIn, meetingsOut, callsIn, callsOut, liOut}]
+    wkw: { parentEmail: "", connections: [] }, // { parentEmail, connections:[{score:"1"|"2"|"3",name,email}] }
+    dirty: { reasons: false, mc: false, dayKpi: false, wkw: false, lifetime: false }, // per-tab dirty flag tied to user interaction
+    // If the user edits a JSON preview textarea directly, the raw text is stored here per-field.
+    // buildPayload uses the override instead of the form-built JSON when present.
+    // reasons/wkw are raw values; mc/day are the INNER KpiResponse object text (envelope rebuilt at save time).
+    jsonOverride: { reasons: null, mc: null, day: null, wkw: null, life: null }
+  };
+
+  function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
+  function toast(msg, isError) {
+    var t = document.getElementById("toast");
+    t.textContent = msg;
+    t.className = "toast show" + (isError ? " error" : "");
+    setTimeout(function(){ t.className = "toast" + (isError?" error":""); }, 2000);
+  }
+  function setStatus(t) { document.getElementById("status").textContent = t || ""; }
+
+  // ---- Tab switching ----
+  document.querySelectorAll(".tab").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      if (btn.disabled) return;
+      document.querySelectorAll(".tab").forEach(function (t) { t.classList.toggle("active", t === btn); });
+      var key = btn.dataset.tab;
+      document.querySelectorAll(".pane").forEach(function (p) { p.hidden = (p.dataset.pane !== key); });
+    });
+  });
+
+  // ---- Load ----
+  function show(id) { document.getElementById(id).hidden = false; }
+  function hide(id) { document.getElementById(id).hidden = true; }
+
+  function showError(msg) {
+    hide("loading");
+    var el = document.getElementById("loaderr");
+    el.textContent = msg;
+    el.hidden = false;
+  }
+
+  function bootstrap() {
+    if (!Xrm || !Xrm.WebApi) {
+      showError("Xrm.WebApi not available. Open this page from the command bar button.");
+      return;
+    }
+    if (!ctx.entityId || !ctx.entityName) {
+      showError("Missing record context. Open this page from the command bar button.");
+      return;
+    }
+
+    // Context chip
+    var chip = document.getElementById("ctxChip");
+    document.getElementById("ctxText").textContent = ctx.entityName + " · " + ctx.entityId.slice(0,8);
+    chip.hidden = false;
+
+    // Prime organizationId from global context (used when saving KPI JSON payloads)
+    try {
+      var gc = Xrm.Utility.getGlobalContext();
+      var primed = (gc.organizationSettings && gc.organizationSettings.organizationId)
+                || (gc.userSettings && gc.userSettings.organizationId) || "";
+      if (primed) state.organizationId = primed.replace(/[{}]/g, "").toLowerCase();
+      console.log("[RA Setup] primed organizationId =", state.organizationId);
+    } catch (e) { console.log("[RA Setup] could not prime organizationId", e); }
+
+    // Look up existing msdyn_salespremiumdemo by msdyn_entityid
+    var filter = "?$select=msdyn_salespremiumdemoid,msdyn_score,msdyn_grade,msdyn_scoretrend,msdyn_scoredon,msdyn_scorereasons,msdyn_mostcontacted,msdyn_relationshipanalyticsdaykpi,msdyn_wkwjson,_organizationid_value,msdyn_relationshiphealthscorestate,msdyn_relationshiphealthtrend,msdyn_timespentbyteam,msdyn_timespentbycustomer,msdyn_relationshipanalyticskpijson"
+      + "&$filter=msdyn_entityid eq '" + ctx.entityId.replace(/'/g,"''") + "'";
+    Xrm.WebApi.retrieveMultipleRecords("msdyn_salespremiumdemo", filter).then(function (result) {
+      var entities = result.entities || [];
+      console.log("[RA Setup V3] load: found " + entities.length + " msdyn_salespremiumdemo row(s) for entityid " + ctx.entityId, entities.map(function(e){return e.msdyn_salespremiumdemoid;}));
+      if (entities.length > 1) {
+        console.warn("[RA Setup V3] DUPLICATE rows detected — V3 will update the first row only and will not delete existing rows during normal Save.");
+      }
+      if (entities.length > 0) {
+        var r = entities[0];
+        // Stash all matching ids so save can wipe duplicates too.
+        state.allDemoRecordIds = entities.map(function (e) { return e.msdyn_salespremiumdemoid; }).filter(Boolean);
+        state.demoRecordId = r.msdyn_salespremiumdemoid;
+        // Snapshot the originally-loaded values so save can PATCH only dirty fields
+        // (the OOB form does this; sending unchanged JSON fields trips the MS sample-data plugin).
+        state.original = {
+          msdyn_score: r.msdyn_score,
+          msdyn_grade: r.msdyn_grade,
+          msdyn_scoretrend: r.msdyn_scoretrend,
+          msdyn_scoredon: r.msdyn_scoredon || null,
+          msdyn_scorereasons: r.msdyn_scorereasons || null,
+          msdyn_mostcontacted: r.msdyn_mostcontacted || null,
+          msdyn_relationshipanalyticsdaykpi: r.msdyn_relationshipanalyticsdaykpi || null,
+          msdyn_wkwjson: r.msdyn_wkwjson || null,
+          msdyn_relationshiphealthscorestate: r.msdyn_relationshiphealthscorestate,
+          msdyn_relationshiphealthtrend: r.msdyn_relationshiphealthtrend,
+          msdyn_timespentbyteam: r.msdyn_timespentbyteam,
+          msdyn_timespentbycustomer: r.msdyn_timespentbycustomer,
+          msdyn_relationshipanalyticskpijson: r.msdyn_relationshipanalyticskpijson || null
+        };
+        if (r._organizationid_value) state.organizationId = r._organizationid_value;
+        if (r.msdyn_relationshiphealthscorestate != null) state.lifetime.healthState = r.msdyn_relationshiphealthscorestate;
+        if (r.msdyn_relationshiphealthtrend      != null) state.lifetime.healthTrend = r.msdyn_relationshiphealthtrend;
+        if (r.msdyn_timespentbyteam              != null) state.lifetime.timeByTeam  = r.msdyn_timespentbyteam;
+        if (r.msdyn_timespentbycustomer          != null) state.lifetime.timeByCust  = r.msdyn_timespentbycustomer;
+        if (r.msdyn_relationshipanalyticskpijson) hydrateLifetimeFromJson(r.msdyn_relationshipanalyticskpijson);
+        if (r.msdyn_score != null) state.head.score = r.msdyn_score;
+        if (r.msdyn_grade != null) state.head.grade = r.msdyn_grade;
+        if (r.msdyn_scoretrend != null) state.head.trend = r.msdyn_scoretrend;
+        if (r.msdyn_scoredon) {
+          // Convert UTC ISO to local "YYYY-MM-DDTHH:mm" for datetime-local input
+          var dt = new Date(r.msdyn_scoredon);
+          if (!isNaN(dt.getTime())) {
+            function pad(n){ return (n<10?"0":"")+n; }
+            state.head.scoredOn = dt.getFullYear()+"-"+pad(dt.getMonth()+1)+"-"+pad(dt.getDate())+"T"+pad(dt.getHours())+":"+pad(dt.getMinutes());
+          }
+        }
+        if (r.msdyn_scorereasons) {
+          try {
+            var parsed = JSON.parse(r.msdyn_scorereasons);
+            if (parsed && Array.isArray(parsed.explanation)) {
+              state.reasons = parsed.explanation
+                .filter(function(e){ return e && e.special; })
+                .map(function(e){
+                  var sp = e.special || {};
+                  var tt = (sp.ttValue && sp.ttValue.special) ? sp.ttValue.special.value : "";
+                  return { influence: sp.influence ? 1 : 0, value: sp.value || "", tooltip: tt || "" };
+                });
+            }
+          } catch (ex) { console.log("Failed to parse existing msdyn_scorereasons", ex); }
+        }
+        if (r.msdyn_mostcontacted) {
+          try {
+            var env = JSON.parse(r.msdyn_mostcontacted);
+            var kpi = (env && env.KpiResponse) ? JSON.parse(env.KpiResponse) : {};
+            for (var i=1; i<=3; i++) {
+              state.mc.byUs[i-1] = {
+                id: kpi["McRelatedEntity"+i] || "",
+                name: "",
+                emails: +kpi["McNumberOfEmails"+i] || 0,
+                meetings: +kpi["McNumberOfMeetings"+i] || 0,
+                phoneCalls: +kpi["McNumberOfPhoneCalls"+i] || 0
+              };
+              state.mc.byThem[i-1] = {
+                id: kpi["McByRelatedEntity"+i] || "",
+                name: "",
+                emails: +kpi["McByNumberOfEmails"+i] || 0,
+                meetings: +kpi["McByNumberOfMeetings"+i] || 0,
+                phoneCalls: +kpi["McByNumberOfPhoneCalls"+i] || 0
+              };
+            }
+          } catch (ex) { console.log("Failed to parse existing msdyn_mostcontacted", ex); }
+        }
+        if (r.msdyn_relationshipanalyticsdaykpi) {
+          try {
+            var envD = JSON.parse(r.msdyn_relationshipanalyticsdaykpi);
+            var arrD = (envD && envD.KpiResponse) ? JSON.parse(envD.KpiResponse) : [];
+            if (Array.isArray(arrD)) {
+              state.dayKpi = arrD.map(function (d) {
+                var day = (d.Day || "").split("T")[0];
+                return {
+                  day: day,
+                  emailsIn:    +d.EmailsReceived   || 0,
+                  emailsOut:   +d.EmailsSent       || 0,
+                  meetingsIn:  +d.MeetingsReceived || 0,
+                  meetingsOut: +d.MeetingsSent     || 0,
+                  callsIn:     +d.PhoneCallsReceived || 0,
+                  callsOut:    +d.PhoneCallsMade   || 0,
+                  liOut:       +d.LinkedInEmailsSent || 0
+                };
+              }).filter(function (d) { return d.day; });
+            }
+          } catch (ex) { console.log("Failed to parse existing msdyn_relationshipanalyticsdaykpi", ex); }
+        }
+        if (r.msdyn_wkwjson) {
+          try {
+            var envW = JSON.parse(r.msdyn_wkwjson);
+            var inner = (envW && typeof envW.KpiResponse === "string") ? JSON.parse(envW.KpiResponse) : envW;
+            if (inner && Array.isArray(inner.Connections)) {
+              state.wkw.connections = inner.Connections.map(function (c) {
+                return {
+                  score: String(c.ConnectionScore || "1"),
+                  name:  c.DisplayName || "",
+                  email: c.EmailAddress || ""
+                };
+              });
+            }
+          } catch (ex) { console.log("Failed to parse existing msdyn_wkwjson", ex); }
+        }
+      }
+      onReady();
+    }, function (err) {
+      showError("Failed to load existing data: " + (err && err.message ? err.message : err));
+    });
+  }
+
+  function onReady() {
+    hide("loading");
+    show("loading"); // no-op placeholder to keep pattern
+    hide("loading");
+    document.querySelector('.pane[data-pane="score"]').hidden = false;
+    document.querySelectorAll('[data-opportunity-only]').forEach(function (el) { el.hidden = !isOpportunity(); });
+    document.getElementById("btn-save").disabled = false;
+    bindHead();
+    renderReasons();
+    renderMc();
+    renderDayKpi();
+    renderWkw();
+    renderLifetime();
+    renderSimilarWon();
+    setupUtilities();
+    refreshJsonPreviews();
+    setupJsonOverrideHandlers();
+    // Keep JSON previews in sync with any edit in the body (inputs, selects, checkboxes, buttons),
+    // and mark the corresponding tab dirty so the save handler knows what to PATCH.
+    var body = document.querySelector("section.body");
+    function markDirtyFromEvent(e) {
+      var pane = e.target.closest(".pane");
+      if (!pane) return;
+      var p = pane.getAttribute("data-pane");
+      if (p === "score") state.dirty.reasons = true;
+      else if (p === "mc")   state.dirty.mc       = true;
+      else if (p === "day")  state.dirty.dayKpi   = true;
+      else if (p === "wkw")  state.dirty.wkw      = true;
+      else if (p === "life" || p === "similar") state.dirty.lifetime = true;
+      if (p !== "util") document.getElementById("btn-save").disabled = false;
+    }
+    if (body) {
+      body.addEventListener("input",  function (e) { markDirtyFromEvent(e); refreshJsonPreviews(); });
+      body.addEventListener("change", function (e) { markDirtyFromEvent(e); refreshJsonPreviews(); });
+      body.addEventListener("click",  function (e) {
+        // Only buttons inside the panes count as edits (not the tab strip or save/cancel).
+        if (e.target.tagName === "BUTTON" && e.target.closest(".pane")) markDirtyFromEvent(e);
+        setTimeout(refreshJsonPreviews, 0);
+      });
+    }
+    setStatus(state.demoRecordId ? "Loaded existing configuration." : "No existing configuration — creating a new one on save.");
+    // Load people directories for the Most-contacted picker (fire-and-forget)
+    loadPeople();
+    loadWonOpportunities();
+    // Look up the parent record's email so Who-knows-whom can default its UUID.
+    loadParentEmail();
+  }
+
+  // ---- People directory (contacts + users) ----
+  var peopleLoadPromise = null;
+  function loadPeople() {
+    if (peopleLoadPromise) return peopleLoadPromise;
+    // Contacts: prefer those linked to this record where the platform requires it.
+    // For contact records, testing showed any other contact is valid, but the
+    // current contact as McRelatedEntityN makes the Sales Premium plugin NRE.
+    //   account     → contacts where parentcustomerid = this account
+    //   contact     → active contacts except the current contact
+    //   opportunity → opp parent contact, related-account contacts, then active-contact fallback
+    //   lead        → broad active-contact list
+    var en = (ctx.entityName || "").toLowerCase();
+    var contactsQ = null;
+    if (en === "account" && ctx.entityId) {
+      contactsQ = "contacts?$select=contactid,fullname,firstname,lastname&$filter=statecode eq 0 and _parentcustomerid_value eq " + ctx.entityId + "&$orderby=fullname asc&$top=200";
+    } else if (en === "contact" && ctx.entityId) {
+      contactsQ = "contacts?$select=contactid,fullname,firstname,lastname&$filter=statecode eq 0 and fullname ne null and contactid ne " + ctx.entityId + "&$orderby=modifiedon desc&$top=200";
+    } else if (en === "opportunity" && ctx.entityId) {
+      contactsQ = "opportunities(" + ctx.entityId + ")?$select=opportunityid&$expand=parentcontactid($select=contactid,fullname,firstname,lastname),parentaccountid($select=accountid)";
+    } else {
+      // Fallback (lead or unknown): top-200 broad list. Plugin may NRE for some
+      // selections, but this keeps the picker usable.
+      contactsQ = "contacts?$select=contactid,fullname,firstname,lastname&$filter=statecode eq 0 and fullname ne null&$orderby=modifiedon desc&$top=200";
+    }
+    // Users: active non-app users, top 100
+    var usersQ = "systemusers?$select=fullname,firstname,lastname,internalemailaddress&$filter=isdisabled eq false and applicationid eq null and accessmode ne 3 and fullname ne null&$orderby=fullname asc&$top=100";
+    peopleLoadPromise = Promise.all([
+      webApiFetch("GET", contactsQ),
+      webApiFetch("GET", usersQ)
+    ]).then(function (res) {
+      // For opportunity we get a single record back with $expand; flatten to {value:[...]}.
+      var contactsRaw;
+      if (en === "opportunity") {
+        var opp = res[0] || {};
+        var arr = [];
+        if (opp.parentcontactid) arr.push(opp.parentcontactid);
+        if (opp.parentaccountid && opp.parentaccountid.accountid) {
+          // Also pull contacts of the related account (best-effort, fire after).
+          state._oppAccountId = opp.parentaccountid.accountid;
+        }
+        contactsRaw = { value: arr };
+      } else {
+        contactsRaw = res[0];
+      }
+      state.contacts = (contactsRaw.value || []).map(function (c) { return { id: c.contactid, name: c.fullname || ((c.firstname||"") + " " + (c.lastname||"")).trim() }; }).filter(function (p) { return p.id && p.name; });
+      state.users    = (res[1].value || []).map(function (u) { return { id: u.systemuserid, name: u.fullname || ((u.firstname||"") + " " + (u.lastname||"")).trim(), email: u.internalemailaddress || "" }; }).filter(function (p) { return p.id && p.name; });
+      var seenContacts = {};
+      state.contacts.forEach(function (p) { seenContacts[String(p.id).toLowerCase()] = true; });
+      function addContacts(records) {
+        (records || []).forEach(function (c) {
+          var id = c.contactid;
+          var name = c.fullname || ((c.firstname||"") + " " + (c.lastname||"")).trim();
+          if (id && name && !seenContacts[String(id).toLowerCase()]) {
+            seenContacts[String(id).toLowerCase()] = true;
+            state.contacts.push({ id: id, name: name });
+          }
+        });
+      }
+      var contactFollowups = Promise.resolve();
+      if (en === "account") {
+        contactFollowups = contactFollowups.then(function () {
+          if (state.contacts.length >= 3) return null;
+          return webApiFetch("GET", "contacts?$select=contactid,fullname,firstname,lastname&$filter=statecode eq 0 and fullname ne null&$orderby=modifiedon desc&$top=200").then(function (extra) {
+            addContacts(extra.value);
+          }, function () {});
+        });
+      }
+      if (en === "opportunity") {
+        contactFollowups = contactFollowups.then(function () {
+          if (!state._oppAccountId) return null;
+          return webApiFetch("GET", "contacts?$select=contactid,fullname,firstname,lastname&$filter=statecode eq 0 and _parentcustomerid_value eq " + state._oppAccountId + "&$orderby=fullname asc&$top=200").then(function (extra) {
+            addContacts(extra.value);
+          }, function () {});
+        }).then(function () {
+          if (state.contacts.length >= 3) return null;
+          return webApiFetch("GET", "contacts?$select=contactid,fullname,firstname,lastname&$filter=statecode eq 0 and fullname ne null&$orderby=modifiedon desc&$top=200").then(function (extra) {
+            addContacts(extra.value);
+          }, function () {});
+        });
+      }
+      return contactFollowups.then(function () {
+        populateDatalists();
+        // Back-fill names for rows whose id we loaded from the record
+        function hydrate(rows, list){
+          rows.forEach(function (r) {
+            if (r.id && !r.name) {
+              var match = null;
+              for (var i=0;i<list.length;i++) { if (list[i].id === r.id) { match = list[i]; break; } }
+              if (match) r.name = match.name;
+            }
+          });
+        }
+        hydrate(state.mc.byUs,   state.contacts);
+        hydrate(state.mc.byThem, state.users);
+        sanitizeMostContactedSelfReferences(false);
+        // If any saved row still can't resolve its id, fetch that person directly so we at least show the name.
+        var missing = [];
+        state.mc.byUs.forEach(function (r) { if (r.id && !r.name) missing.push({ kind:"contact", id:r.id, row:r }); });
+        state.mc.byThem.forEach(function (r) { if (r.id && !r.name) missing.push({ kind:"user", id:r.id, row:r }); });
+        Promise.all(missing.map(function (m) {
+          var path = (m.kind === "contact" ? "contacts(" : "systemusers(") + m.id + ")?$select=fullname";
+          return webApiFetch("GET", path).then(function (p) { m.row.name = p && p.fullname ? p.fullname : m.row.name; }, function () {});
+        })).then(function () { renderMc(); return true; }, function () { renderMc(); return true; });
+      }, function () { populateDatalists(); renderMc(); return true; });
+    }, function (err) {
+      console.log("Failed to load people directory", err);
+      peopleLoadPromise = null;
+      toast("Could not load contacts/users list", true);
+      return false;
+    });
+    return peopleLoadPromise;
+  }
+
+  // ---- Head fields ----
+  function bindHead() {
+    var s = document.getElementById("f-score");
+    var g = document.getElementById("f-grade");
+    var go = document.getElementById("f-grade-out");
+    var d = document.getElementById("f-scoredon");
+    s.value = state.head.score;
+    g.value = String(state.head.grade);
+    go.textContent = GRADE_LABELS[state.head.grade] || "";
+    d.value = state.head.scoredOn;
+    document.querySelectorAll(".trend button").forEach(function (b) {
+      b.classList.toggle("on", +b.dataset.trend === state.head.trend);
+      b.addEventListener("click", function () {
+        state.head.trend = +b.dataset.trend;
+        document.querySelectorAll(".trend button").forEach(function (x) { x.classList.toggle("on", x === b); });
+      });
+    });
+    s.addEventListener("input", function () { state.head.score = Math.max(0, Math.min(100, parseInt(s.value,10) || 0)); });
+    g.addEventListener("change", function () { state.head.grade = +g.value; go.textContent = GRADE_LABELS[state.head.grade] || ""; });
+    d.addEventListener("change", function () { state.head.scoredOn = d.value; });
+  }
+
+  // ---- Reasons ----
+  function prettyJson(s) {
+    if (!s) return "";
+    try {
+      var outer = JSON.parse(s);
+      // Sales Premium wraps the payload in an envelope {EntityId,OrganizationId,EntityType,KpiResponse:"<stringified inner>"}.
+      // For the per-tab preview the user only cares about the inner KpiResponse — strip the envelope.
+      if (outer && typeof outer.KpiResponse === "string") {
+        try { outer = JSON.parse(outer.KpiResponse); } catch (e1) { outer = outer.KpiResponse; }
+      } else if (outer && outer.KpiResponse && typeof outer.KpiResponse === "object") {
+        outer = outer.KpiResponse;
+      }
+      return JSON.stringify(outer, null, 2);
+    } catch (e) { return s; }
+  }
+  function refreshJsonPreviews() {
+    // For each field, respect a user-supplied override: if set, leave the textarea alone so
+    // the user's edits aren't clobbered when other form inputs fire the refresh. The override
+    // is applied on save (buildPayload).
+    var t;
+    t = document.getElementById("jp-reasons");
+    if (t && state.jsonOverride.reasons == null) {
+      try {
+        var env = JSON.parse(buildScoreReasonsJson());
+        if (env && typeof env.KpiResponse === "string") {
+          try { env.KpiResponse = JSON.parse(env.KpiResponse); } catch (e1) {}
+        }
+        t.value = JSON.stringify(env, null, 2);
+      } catch (e) { t.value = buildScoreReasonsJson(); }
+    }
+    t = document.getElementById("jp-mc");
+    if (t && state.jsonOverride.mc == null) t.value = prettyJson(buildMostContactedJson());
+    t = document.getElementById("jp-day");
+    if (t && state.jsonOverride.day == null) t.value = (state.dayKpi && state.dayKpi.length > 0) ? prettyJson(buildDayKpiJson()) : "(empty — will not be written on save)";
+    t = document.getElementById("jp-wkw");
+    if (t && state.jsonOverride.wkw == null) t.value = prettyJson(buildWkwJson());
+    t = document.getElementById("jp-life");
+    if (t && state.jsonOverride.life == null) {
+      try {
+        var raw = buildLifetimeKpiJson();
+        var env = JSON.parse(raw);
+        // Inflate any nested KpiResponse strings for readability.
+        if (env && typeof env.KpiResponse === "string") {
+          try { env.KpiResponse = JSON.parse(env.KpiResponse); } catch (e1) {}
+        }
+        if (env && env.LifeTimeKpisResponse && typeof env.LifeTimeKpisResponse.KpiResponse === "string") {
+          try { env.LifeTimeKpisResponse.KpiResponse = JSON.parse(env.LifeTimeKpisResponse.KpiResponse); } catch (e2) {}
+        }
+        t.value = JSON.stringify(env, null, 2);
+      } catch (e) { t.value = buildLifetimeKpiJson(); }
+    }
+  }
+
+  // Wire up the JSON preview textareas so the user can edit them directly. Any edit marks
+  // that field as overridden; refreshJsonPreviews() will stop overwriting the textarea, and
+  // buildPayload() will use the user's text (wrapping in the envelope for mc/day) instead
+  // of the form-built JSON. Invalid JSON gets a red border but is not blocked from saving —
+  // Dataverse will reject it if it's truly malformed.
+  function setupJsonOverrideHandlers() {
+    ["reasons","mc","day","wkw","life"].forEach(function (key) {
+      var ta = document.getElementById("jp-" + key);
+      if (!ta) return;
+      ta.addEventListener("input", function () {
+        state.jsonOverride[key] = ta.value;
+        var wrap = ta.closest(".json-preview");
+        if (wrap) wrap.classList.add("dirty");
+        validateOverride(key);
+        // Mark the matching tab dirty so the save path is taken.
+        if (key === "reasons") state.dirty.reasons = true;
+        else if (key === "mc") state.dirty.mc = true;
+        else if (key === "day") state.dirty.dayKpi = true;
+        else if (key === "wkw") state.dirty.wkw = true;
+        else if (key === "life") state.dirty.lifetime = true;
+      });
+    });
+    document.querySelectorAll("[data-jp-reset]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var key = btn.getAttribute("data-jp-reset");
+        state.jsonOverride[key] = null;
+        var wrap = btn.closest(".json-preview");
+        if (wrap) wrap.classList.remove("dirty", "invalid");
+        refreshJsonPreviews();
+        toast("Reset to form values");
+      });
+    });
+  }
+  function validateOverride(key) {
+    var ta = document.getElementById("jp-" + key);
+    if (!ta) return;
+    var wrap = ta.closest(".json-preview");
+    if (!wrap) return;
+    try { JSON.parse(ta.value); wrap.classList.remove("invalid"); }
+    catch (e) { wrap.classList.add("invalid"); }
+  }
+
+  function wrapWithEnvelope(innerText) {
+    // mc / day are stored as an envelope where KpiResponse is a STRING of the inner payload.
+    // Take whatever the user has (parse+compact if valid JSON, else use the raw text).
+    var inner = innerText;
+    try { inner = JSON.stringify(JSON.parse(innerText)); } catch (e) { /* keep raw */ }
+    return JSON.stringify({
+      EntityId: ctx.entityId,
+      OrganizationId: getOrgId(),
+      EntityType: ctx.entityName,
+      KpiResponse: inner
+    });
+  }
+
+  function renderReasons() {
+    var host = document.getElementById("rows");
+    host.innerHTML = "";
+    state.reasons.forEach(function (r, i) {
+      var row = document.createElement("div");
+      row.className = "row";
+      row.innerHTML =
+        '<div class="influence">' +
+          '<label class="switch"><input type="checkbox" ' + (r.influence ? "checked" : "") + ' data-i="' + i + '" data-k="influence"><span class="slider"></span></label>' +
+          '<span class="lbl">' + (r.influence ? "Positive" : "Negative") + '</span>' +
+        '</div>' +
+        '<input type="text" value="' + esc(r.value)   + '" placeholder="Reason shown to the user" data-i="' + i + '" data-k="value">' +
+        '<input type="text" value="' + esc(r.tooltip) + '" placeholder="Tooltip shown on hover"  data-i="' + i + '" data-k="tooltip">' +
+        '<button class="btn danger" title="Remove" aria-label="Remove row" data-i="' + i + '" data-k="remove">✕</button>';
+      host.appendChild(row);
+    });
+    document.getElementById("empty").hidden = state.reasons.length > 0;
+    host.querySelectorAll("input,button").forEach(function (el) {
+      el.addEventListener("input", onReasonEdit);
+      el.addEventListener("click", onReasonClick);
+    });
+  }
+  function onReasonEdit(e) {
+    var i = +e.target.dataset.i, k = e.target.dataset.k;
+    if (k === "influence") {
+      state.reasons[i].influence = e.target.checked ? 1 : 0;
+      e.target.closest(".influence").querySelector(".lbl").textContent = state.reasons[i].influence ? "Positive" : "Negative";
+    } else if (k === "value" || k === "tooltip") {
+      state.reasons[i][k] = e.target.value;
+    }
+  }
+  function onReasonClick(e) {
+    if (e.target.dataset && e.target.dataset.k === "remove") {
+      state.reasons.splice(+e.target.dataset.i, 1);
+      renderReasons();
+    }
+  }
+  document.getElementById("btn-add").addEventListener("click", function () {
+    state.reasons.push({ influence: 1, value: "", tooltip: "" });
+    renderReasons();
+    var last = document.querySelector("#rows .row:last-child input[type=text]");
+    last && last.focus();
+  });
+
+  document.getElementById("btn-generate").addEventListener("click", function () {
+    var pos = sampleN(POSITIVE_REASONS, 2).map(function (r) { return { influence: 1, value: r.value, tooltip: r.tooltip }; });
+    var neg = sampleN(NEGATIVE_REASONS, 2).map(function (r) { return { influence: 0, value: r.value, tooltip: r.tooltip }; });
+    state.reasons = pos.concat(neg);
+    renderReasons();
+    toast("Generated 2 positive + 2 negative");
+  });
+
+  // ---- Most contacted ----
+  // Row model stores the picked GUID so the Sales Premium visual can resolve the name/avatar.
+  // The datalist acts as a type-ahead of real contacts / users.
+  function findPersonByName(list, name) {
+    if (!name) return null;
+    var n = name.trim().toLowerCase();
+    for (var i=0;i<list.length;i++) { if ((list[i].name||"").toLowerCase() === n) return list[i]; }
+    return null;
+  }
+  function populateDatalists() {
+    var dlC = document.getElementById("dl-contacts");
+    var dlU = document.getElementById("dl-users");
+    if (dlC) dlC.innerHTML = state.contacts.map(function (p) { return '<option value="' + esc(p.name) + '"></option>'; }).join("");
+    if (dlU) dlU.innerHTML = state.users.map(function (p) { return '<option value="' + esc(p.name) + '"></option>'; }).join("");
+    var dlW = document.getElementById("dl-wkw-users");
+    if (dlW) dlW.innerHTML = state.users.map(function (p) { return '<option value="' + esc(p.name) + '">' + esc(p.email || "") + '</option>'; }).join("");
+  }
+  function renderMc() {
+    renderMcGroup("mc-by-us", state.mc.byUs, "byUs", "dl-contacts");
+    renderMcGroup("mc-by-them", state.mc.byThem, "byThem", "dl-users");
+  }
+  function renderMcGroup(hostId, rows, key, datalistId) {
+    var host = document.getElementById(hostId);
+    host.innerHTML = "";
+    rows.forEach(function (r, i) {
+      var row = document.createElement("div");
+      row.className = "mc-row";
+      row.innerHTML =
+        '<div class="name-wrap">' +
+          '<span class="avatar">' + esc(initialsOf(r.name)) + '</span>' +
+          '<input type="text" list="' + datalistId + '" placeholder="Start typing a name…" value="' + esc(r.name) + '" data-g="' + key + '" data-i="' + i + '" data-k="name">' +
+        '</div>' +
+        '<div class="guid-col"><input type="text" class="guid' + (r.id && !isValidGuid(r.id) ? ' invalid' : '') + '" placeholder="00000000-0000-0000-0000-000000000000" value="' + esc(r.id || "") + '" data-g="' + key + '" data-i="' + i + '" data-k="id"></div>' +
+        '<input type="number" min="0" value="' + (r.emails||0)     + '" data-g="' + key + '" data-i="' + i + '" data-k="emails">' +
+        '<input type="number" min="0" value="' + (r.meetings||0)   + '" data-g="' + key + '" data-i="' + i + '" data-k="meetings">' +
+        '<input type="number" min="0" value="' + (r.phoneCalls||0) + '" data-g="' + key + '" data-i="' + i + '" data-k="phoneCalls">' +
+        '<button type="button" class="btn danger" title="Clear row" data-g="' + key + '" data-i="' + i + '" data-k="clear">×</button>';
+      host.appendChild(row);
+    });
+    // Match advanced-mode grid on row wrappers
+    host.querySelectorAll(".mc-row").forEach(function (el) { el.classList.toggle("adv", !!state.mcAdvanced); });
+    // Header (sibling) too
+    var section = host.closest(".mc-section");
+    if (section) {
+      section.classList.toggle("adv", !!state.mcAdvanced);
+      var hdr = section.querySelector(".mc-hdr");
+      if (hdr) hdr.classList.toggle("adv", !!state.mcAdvanced);
+    }
+    host.querySelectorAll("input").forEach(function (el) {
+      el.addEventListener("input", onMcEdit);
+      el.addEventListener("change", onMcEdit);
+    });
+    host.querySelectorAll("button[data-k='clear']").forEach(function (btn) {
+      btn.addEventListener("click", onMcClearRow);
+    });
+  }
+  function blankMcRow() { return { id:"", name:"", emails:0, meetings:0, phoneCalls:0 }; }
+  function compactMcRows(rows) {
+    var kept = rows.filter(function (r) { return r && (r.id || r.name || r.emails || r.meetings || r.phoneCalls); });
+    while (kept.length < 3) kept.push(blankMcRow());
+    return kept.slice(0, 3);
+  }
+  function onMcClearRow(e) {
+    var group = e.currentTarget.dataset.g;
+    var idx = +e.currentTarget.dataset.i;
+    if (!state.mc[group] || !state.mc[group][idx]) return;
+    state.mc[group][idx] = blankMcRow();
+    state.mc[group] = compactMcRows(state.mc[group]);
+    renderMc();
+    toast("Row cleared");
+  }
+  function isValidGuid(s) {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(s||"").trim());
+  }
+  function findPersonById(list, id) {
+    if (!id) return null;
+    var nid = String(id).toLowerCase();
+    for (var i=0;i<list.length;i++) { if (String(list[i].id).toLowerCase() === nid) return list[i]; }
+    return null;
+  }
+  function isCurrentContactMostContactedId(id) {
+    return (ctx.entityName || "").toLowerCase() === "contact"
+      && !!id
+      && String(id).replace(/[{}]/g, "").toLowerCase() === String(ctx.entityId || "").replace(/[{}]/g, "").toLowerCase();
+  }
+  function sanitizeMostContactedSelfReferences(showToast) {
+    if ((ctx.entityName || "").toLowerCase() !== "contact") return 0;
+    var cleared = 0;
+    state.mc.byUs.forEach(function (row) {
+      if (isCurrentContactMostContactedId(row.id)) {
+        row.id = "";
+        row.name = "";
+        row.emails = 0;
+        row.meetings = 0;
+        row.phoneCalls = 0;
+        cleared++;
+      }
+    });
+    if (cleared && showToast) toast("Current contact cannot be listed as most contacted", true);
+    return cleared;
+  }
+  function onMcEdit(e) {
+    var g = e.target.dataset.g, i = +e.target.dataset.i, k = e.target.dataset.k;
+    var list = g === "byUs" ? state.contacts : state.users;
+    if (k === "name") {
+      var match = findPersonByName(list, e.target.value);
+      state.mc[g][i].name = e.target.value;
+      state.mc[g][i].id = match ? match.id : "";
+      var row = e.target.closest(".mc-row");
+      var av = row.querySelector(".avatar");
+      if (av) av.textContent = initialsOf(e.target.value);
+      // Reflect resolved id into the GUID input so the user sees what was picked
+      var guidInput = row.querySelector('input[data-k="id"]');
+      if (guidInput) {
+        guidInput.value = state.mc[g][i].id;
+        guidInput.classList.remove("invalid");
+      }
+    } else if (k === "id") {
+      var raw = (e.target.value || "").trim().replace(/[{}]/g, "").toLowerCase();
+      if (g === "byUs" && isCurrentContactMostContactedId(raw)) {
+        state.mc[g][i] = { id:"", name:"", emails:0, meetings:0, phoneCalls:0 };
+        var selfRow = e.target.closest(".mc-row");
+        if (selfRow) {
+          var selfName = selfRow.querySelector('input[data-k="name"]');
+          var selfAvatar = selfRow.querySelector(".avatar");
+          if (selfName) selfName.value = "";
+          if (selfAvatar) selfAvatar.textContent = "";
+          selfRow.querySelectorAll('input[type="number"]').forEach(function (n) { n.value = 0; });
+        }
+        e.target.value = "";
+        e.target.classList.add("invalid");
+        toast("Current contact cannot be listed as most contacted", true);
+        return;
+      }
+      state.mc[g][i].id = raw;
+      // Validate + try to backfill the name from the directory
+      var valid = raw === "" || isValidGuid(raw);
+      e.target.classList.toggle("invalid", !valid);
+      if (valid && raw) {
+        var match2 = findPersonById(list, raw);
+        if (match2) {
+          state.mc[g][i].name = match2.name;
+          var row2 = e.target.closest(".mc-row");
+          var nameInput = row2.querySelector('input[data-k="name"]');
+          if (nameInput) nameInput.value = match2.name;
+          var av2 = row2.querySelector(".avatar");
+          if (av2) av2.textContent = initialsOf(match2.name);
+        }
+      }
+    } else {
+      state.mc[g][i][k] = Math.max(0, parseInt(e.target.value, 10) || 0);
+    }
+  }
+  function generateMostContactedSample() {
+    if (!state.contacts.length || !state.users.length) return false;
+    function rand(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
+    var pickC = sampleN(state.contacts, Math.min(3, state.contacts.length));
+    var pickU = sampleN(state.users,    Math.min(3, state.users.length));
+    state.mc.byUs   = pickC.map(function (p) { return { id:p.id, name:p.name, emails:rand(15,80), meetings:rand(1,8),  phoneCalls:rand(0,6) }; });
+    state.mc.byThem = pickU.map(function (p) { return { id:p.id, name:p.name, emails:rand(10,60), meetings:rand(0,5),  phoneCalls:rand(0,4) }; });
+    while (state.mc.byUs.length   < 3) state.mc.byUs.push({id:"",name:"",emails:0,meetings:0,phoneCalls:0});
+    while (state.mc.byThem.length < 3) state.mc.byThem.push({id:"",name:"",emails:0,meetings:0,phoneCalls:0});
+    renderMc();
+    toast("Sample data generated");
+    return true;
+  }
+  document.getElementById("btn-mc-generate").addEventListener("click", function () {
+    if (generateMostContactedSample()) return;
+    toast("Loading people, then generating sample data…");
+    loadPeople().then(function () {
+      if (!generateMostContactedSample()) toast("Could not find enough contacts or colleagues to generate sample data", true);
+    });
+  });
+  document.getElementById("btn-mc-clear").addEventListener("click", function () {
+    state.mc = { byUs: blankMcRows(3), byThem: blankMcRows(3) };
+    renderMc();
+    toast("Cleared");
+  });
+  document.getElementById("chk-mc-adv").addEventListener("change", function (e) {
+    state.mcAdvanced = !!e.target.checked;
+    renderMc();
+  });
+
+  // ---- Day KPIs ----
+  var DK_FIELDS = ["emailsIn","emailsOut","meetingsIn","meetingsOut","callsIn","callsOut","liOut"];
+  var DK_LABELS = { emailsIn:"Em in", emailsOut:"Em out", meetingsIn:"Mtg in", meetingsOut:"Mtg out", callsIn:"Call in", callsOut:"Call out", liOut:"LI out" };
+  var DOW = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  function dkPad(n){ return (n<10?"0":"")+n; }
+  function dkIso(d){ return d.getFullYear()+"-"+dkPad(d.getMonth()+1)+"-"+dkPad(d.getDate()); }
+  function dkFmt(iso){ var d = new Date(iso+"T00:00:00"); return dkPad(d.getDate())+"/"+dkPad(d.getMonth()+1); }
+  function dkIsWeekend(iso){ var dow = new Date(iso+"T00:00:00").getDay(); return dow===0 || dow===6; }
+
+  function renderDayKpi(){
+    var host = document.getElementById("dk-rows");
+    host.innerHTML = "";
+    state.dayKpi.forEach(function (r, i) {
+      var row = document.createElement("div");
+      row.className = "dk-row";
+      var d = new Date(r.day+"T00:00:00");
+      var dowName = DOW[d.getDay()];
+      var weekend = dkIsWeekend(r.day);
+      row.innerHTML =
+        '<div class="date' + (weekend?" weekend":"") + '">' + dkFmt(r.day) + '<span class="dow">' + dowName + '</span></div>' +
+        DK_FIELDS.map(function (f) { return '<input type="number" min="0" value="' + (r[f]||0) + '" data-i="' + i + '" data-k="' + f + '">'; }).join("") +
+        '<button class="btn danger" title="Remove" aria-label="Remove row" data-i="' + i + '" data-k="remove">✕</button>';
+      host.appendChild(row);
+    });
+    document.getElementById("dk-empty").hidden = state.dayKpi.length > 0;
+    host.querySelectorAll("input").forEach(function (el) { el.addEventListener("input", onDkEdit); });
+    host.querySelectorAll('button[data-k="remove"]').forEach(function (el) { el.addEventListener("click", onDkRemove); });
+    renderDkSummary();
+  }
+  function renderDkSummary(){
+    var host = document.getElementById("dk-summary");
+    if (!state.dayKpi.length) { host.innerHTML = '<div class="cell"><span class="lbl">Rows</span><span class="val">0</span></div>'; return; }
+    var totals = {}; DK_FIELDS.forEach(function (f) { totals[f] = 0; });
+    state.dayKpi.forEach(function (r) { DK_FIELDS.forEach(function (f) { totals[f] += (+r[f]||0); }); });
+    host.innerHTML = DK_FIELDS.map(function (f) { return '<div class="cell"><span class="lbl">' + DK_LABELS[f] + '</span><span class="val">' + totals[f] + '</span></div>'; }).join("");
+  }
+  function onDkEdit(e) {
+    var i = +e.target.dataset.i, k = e.target.dataset.k;
+    state.dayKpi[i][k] = Math.max(0, parseInt(e.target.value, 10) || 0);
+    state.dirty.dayKpi = true;
+    renderDkSummary();
+  }
+  function onDkRemove(e) {
+    state.dayKpi.splice(+e.target.dataset.i, 1);
+    state.dirty.dayKpi = true;
+    renderDayKpi();
+  }
+  document.getElementById("btn-dk-generate").addEventListener("click", function () {
+    var n = parseInt(document.getElementById("dk-range").value, 10) || 30;
+    function rand(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
+    var out = [];
+    var today = new Date(); today.setHours(0,0,0,0);
+    for (var i=n-1; i>=0; i--) {
+      var d = new Date(today); d.setDate(d.getDate()-i);
+      var iso = dkIso(d);
+      var k = dkIsWeekend(iso) ? 0.25 : 1;
+      out.push({
+        day: iso,
+        emailsIn:    Math.round(rand(3,18)*k),
+        emailsOut:   Math.round(rand(2,14)*k),
+        meetingsIn:  Math.round(rand(0,2)*k),
+        meetingsOut: Math.round(rand(0,3)*k),
+        callsIn:     Math.round(rand(0,3)*k),
+        callsOut:    Math.round(rand(0,4)*k),
+        liOut:       Math.round(rand(0,2)*k)
+      });
+    }
+    state.dayKpi = out;
+    state.dirty.dayKpi = true;
+    renderDayKpi();
+    toast("Generated " + n + " days");
+  });
+  document.getElementById("btn-dk-clear").addEventListener("click", function () {
+    state.dayKpi = [];
+    state.dirty.dayKpi = true;
+    renderDayKpi();
+    toast("Cleared");
+  });
+
+  // ---- Who knows whom ----
+  // UUID v3 / DNS — Microsoft's own implementation from SalesPremium's UUIDGenerator tool.
+  var uuidlib; (function () { "use strict"; var r={d:function(e,n){for(var t in n)r.o(n,t)&&!r.o(e,t)&&Object.defineProperty(e,t,{enumerable:!0,get:n[t]})},o:function(r,e){return Object.prototype.hasOwnProperty.call(r,e)},r:function(r){"undefined"!=typeof Symbol&&Symbol.toStringTag&&Object.defineProperty(r,Symbol.toStringTag,{value:"Module"}),Object.defineProperty(r,"__esModule",{value:!0})}},e={};r.r(e),r.d(e,{getUuidv3:function(){return g}});var n=/^(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}|00000000-0000-0000-0000-000000000000)$/i,t=function(r){return"string"==typeof r&&n.test(r)};for(var o=[],a=0;a<256;++a)o.push((a+256).toString(16).substr(1));function i(r){return 14+(r+64>>>9<<4)+1}function u(r,e){var n=(65535&r)+(65535&e);return(r>>16)+(e>>16)+(n>>16)<<16|65535&n}function f(r,e,n,t,o,a){var i,f;return u((i=u(u(e,r),u(t,a)))<<(f=o)|i>>>32-f,n)}function c(r,e,n,t,o,a,i){return f(e&n|~e&t,r,e,o,a,i)}function s(r,e,n,t,o,a,i){return f(e&t|n&~t,r,e,o,a,i)}function l(r,e,n,t,o,a,i){return f(e^n^t,r,e,o,a,i)}function d(r,e,n,t,o,a,i){return f(n^(e|~t),r,e,o,a,i)}var p=function(r,e,n){function a(r,e,a,i){if("string"==typeof r&&(r=function(r){r=unescape(encodeURIComponent(r));for(var e=[],n=0;n<r.length;++n)e.push(r.charCodeAt(n));return e}(r)),"string"==typeof e&&(e=function(r){if(!t(r))throw TypeError("Invalid UUID");var e,n=new Uint8Array(16);return n[0]=(e=parseInt(r.slice(0,8),16))>>>24,n[1]=e>>>16&255,n[2]=e>>>8&255,n[3]=255&e,n[4]=(e=parseInt(r.slice(9,13),16))>>>8,n[5]=255&e,n[6]=(e=parseInt(r.slice(14,18),16))>>>8,n[7]=255&e,n[8]=(e=parseInt(r.slice(19,23),16))>>>8,n[9]=255&e,n[10]=(e=parseInt(r.slice(24,36),16))/1099511627776&255,n[11]=e/4294967296&255,n[12]=e>>>24&255,n[13]=e>>>16&255,n[14]=e>>>8&255,n[15]=255&e,n}(e)),16!==e.length)throw TypeError("Namespace must be array-like (16 iterable integer values, 0-255)");var u=new Uint8Array(16+r.length);if(u.set(e),u.set(r,e.length),(u=n(u))[6]=15&u[6]|48,u[8]=63&u[8]|128,a){i=i||0;for(var f=0;f<16;++f)a[i+f]=u[f];return a}return function(r){var e=arguments.length>1&&void 0!==arguments[1]?arguments[1]:0,n=(o[r[e+0]]+o[r[e+1]]+o[r[e+2]]+o[r[e+3]]+"-"+o[r[e+4]]+o[r[e+5]]+"-"+o[r[e+6]]+o[r[e+7]]+"-"+o[r[e+8]]+o[r[e+9]]+"-"+o[r[e+10]]+o[r[e+11]]+o[r[e+12]]+o[r[e+13]]+o[r[e+14]]+o[r[e+15]]).toLowerCase();if(!t(n))throw TypeError("Stringified UUID is invalid");return n}(u)}try{a.name="v3"}catch(r){}return a.DNS="6ba7b810-9dad-11d1-80b4-00c04fd430c8",a.URL="6ba7b811-9dad-11d1-80b4-00c04fd430c8",a}(0,0,(function(r){if("string"==typeof r){var e=unescape(encodeURIComponent(r));r=new Uint8Array(e.length);for(var n=0;n<e.length;++n)r[n]=e.charCodeAt(n)}return function(r){for(var e=[],n=32*r.length,t="0123456789abcdef",o=0;o<n;o+=8){var a=r[o>>5]>>>o%32&255,i=parseInt(t.charAt(a>>>4&15)+t.charAt(15&a),16);e.push(i)}return e}(function(r,e){r[e>>5]|=128<<e%32,r[i(e)-1]=e;for(var n=1732584193,t=-271733879,o=-1732584194,a=271733878,f=0;f<r.length;f+=16){var p=n,v=t,g=o,h=a;n=c(n,t,o,a,r[f],7,-680876936),a=c(a,n,t,o,r[f+1],12,-389564586),o=c(o,a,n,t,r[f+2],17,606105819),t=c(t,o,a,n,r[f+3],22,-1044525330),n=c(n,t,o,a,r[f+4],7,-176418897),a=c(a,n,t,o,r[f+5],12,1200080426),o=c(o,a,n,t,r[f+6],17,-1473231341),t=c(t,o,a,n,r[f+7],22,-45705983),n=c(n,t,o,a,r[f+8],7,1770035416),a=c(a,n,t,o,r[f+9],12,-1958414417),o=c(o,a,n,t,r[f+10],17,-42063),t=c(t,o,a,n,r[f+11],22,-1990404162),n=c(n,t,o,a,r[f+12],7,1804603682),a=c(a,n,t,o,r[f+13],12,-40341101),o=c(o,a,n,t,r[f+14],17,-1502002290),n=s(n,t=c(t,o,a,n,r[f+15],22,1236535329),o,a,r[f+1],5,-165796510),a=s(a,n,t,o,r[f+6],9,-1069501632),o=s(o,a,n,t,r[f+11],14,643717713),t=s(t,o,a,n,r[f],20,-373897302),n=s(n,t,o,a,r[f+5],5,-701558691),a=s(a,n,t,o,r[f+10],9,38016083),o=s(o,a,n,t,r[f+15],14,-660478335),t=s(t,o,a,n,r[f+4],20,-405537848),n=s(n,t,o,a,r[f+9],5,568446438),a=s(a,n,t,o,r[f+14],9,-1019803690),o=s(o,a,n,t,r[f+3],14,-187363961),t=s(t,o,a,n,r[f+8],20,1163531501),n=s(n,t,o,a,r[f+13],5,-1444681467),a=s(a,n,t,o,r[f+2],9,-51403784),o=s(o,a,n,t,r[f+7],14,1735328473),n=l(n,t=s(t,o,a,n,r[f+12],20,-1926607734),o,a,r[f+5],4,-378558),a=l(a,n,t,o,r[f+8],11,-2022574463),o=l(o,a,n,t,r[f+11],16,1839030562),t=l(t,o,a,n,r[f+14],23,-35309556),n=l(n,t,o,a,r[f+1],4,-1530992060),a=l(a,n,t,o,r[f+4],11,1272893353),o=l(o,a,n,t,r[f+7],16,-155497632),t=l(t,o,a,n,r[f+10],23,-1094730640),n=l(n,t,o,a,r[f+13],4,681279174),a=l(a,n,t,o,r[f],11,-358537222),o=l(o,a,n,t,r[f+3],16,-722521979),t=l(t,o,a,n,r[f+6],23,76029189),n=l(n,t,o,a,r[f+9],4,-640364487),a=l(a,n,t,o,r[f+12],11,-421815835),o=l(o,a,n,t,r[f+15],16,530742520),n=d(n,t=l(t,o,a,n,r[f+2],23,-995338651),o,a,r[f],6,-198630844),a=d(a,n,t,o,r[f+7],10,1126891415),o=d(o,a,n,t,r[f+14],15,-1416354905),t=d(t,o,a,n,r[f+5],21,-57434055),n=d(n,t,o,a,r[f+12],6,1700485571),a=d(a,n,t,o,r[f+3],10,-1894986606),o=d(o,a,n,t,r[f+10],15,-1051523),t=d(t,o,a,n,r[f+1],21,-2054922799),n=d(n,t,o,a,r[f+8],6,1873313359),a=d(a,n,t,o,r[f+15],10,-30611744),o=d(o,a,n,t,r[f+6],15,-1560198380),t=d(t,o,a,n,r[f+13],21,1309151649),n=d(n,t,o,a,r[f+4],6,-145523070),a=d(a,n,t,o,r[f+11],10,-1120210379),o=d(o,a,n,t,r[f+2],15,718787259),t=d(t,o,a,n,r[f+9],21,-343485551),n=u(n,p),t=u(t,v),o=u(o,g),a=u(a,h)}return[n,t,o,a]}(function(r){if(0===r.length)return[];for(var e=8*r.length,n=new Uint32Array(i(e)),t=0;t<e;t+=8)n[t>>5]|=(255&r[t/8])<<t%32;return n}(r),8*r.length))}));var v=p;function g(r){return v(r,v.DNS)}uuidlib=e})();
+
+  var WKW_SCORE_LBL = { "1":"Strong", "2":"Fair", "3":"Weak" };
+
+  function computeWkwUuid(email) {
+    var e = (email || "").trim().toLowerCase();
+    if (!e) return "";
+    try { return uuidlib.getUuidv3(e); } catch (ex) { return ""; }
+  }
+
+  // Look up the record's primary email so we can default the UUID.
+  // contact/lead → emailaddress1; account → emailaddress1; opportunity → parentcontactid.emailaddress1
+  function loadParentEmail() {
+    var path = null;
+    if (ctx.entityName === "contact")        path = "contacts("      + ctx.entityId + ")?$select=emailaddress1";
+    else if (ctx.entityName === "lead")      path = "leads("         + ctx.entityId + ")?$select=emailaddress1";
+    else if (ctx.entityName === "account")   path = "accounts("      + ctx.entityId + ")?$select=emailaddress1";
+    else if (ctx.entityName === "opportunity") path = "opportunities(" + ctx.entityId + ")?$expand=parentcontactid($select=emailaddress1)";
+    if (!path) return;
+    webApiFetch("GET", path).then(function (r) {
+      var email = r && r.emailaddress1;
+      if (!email && r && r.parentcontactid && r.parentcontactid.emailaddress1) email = r.parentcontactid.emailaddress1;
+      if (email && !state.wkw.parentEmail) {
+        state.wkw.parentEmail = email;
+        renderWkwHead();
+        // The JSON preview was rendered before this async load finished — refresh it
+        // so the Uuid field reflects the newly-loaded parent email.
+        try { refreshJsonPreviews(); } catch (e) {}
+      }
+    }, function (err) { console.log("loadParentEmail failed", err); });
+  }
+
+  function renderWkwHead() {
+    var emEl = document.getElementById("wkw-email");
+    if (emEl && emEl.value !== state.wkw.parentEmail) emEl.value = state.wkw.parentEmail || "";
+    var uuid = computeWkwUuid(state.wkw.parentEmail);
+    document.getElementById("wkw-uuid").textContent = uuid || "—";
+    var warn = document.getElementById("wkw-skip-warning");
+    if (warn) warn.style.display = uuid ? "none" : "block";
+  }
+  function renderWkw() {
+    renderWkwHead();
+    var host = document.getElementById("wkw-rows");
+    host.innerHTML = "";
+    state.wkw.connections.forEach(function (c, i) {
+      var row = document.createElement("div");
+      row.className = "wkw-row";
+      row.innerHTML =
+        '<div class="wkw-score" role="group">' +
+          ["1","2","3"].map(function (s) { return '<button type="button" data-s="'+s+'" data-i="'+i+'" data-k="score" class="'+(c.score===s?"on":"")+'">'+WKW_SCORE_LBL[s]+'</button>'; }).join("") +
+        '</div>' +
+        '<input type="text" list="dl-wkw-users" placeholder="Full name" value="'+esc(c.name)+'" data-i="'+i+'" data-k="name">' +
+        '<input type="email" placeholder="name@contoso.com" value="'+esc(c.email)+'" data-i="'+i+'" data-k="email">' +
+        '<button class="btn danger" title="Remove" aria-label="Remove" data-i="'+i+'" data-k="remove">✕</button>';
+      host.appendChild(row);
+    });
+    document.getElementById("wkw-empty").hidden = state.wkw.connections.length > 0;
+    host.querySelectorAll("input").forEach(function (el) { el.addEventListener("input", onWkwEdit); });
+    host.querySelectorAll(".wkw-score button").forEach(function (el) { el.addEventListener("click", onWkwScore); });
+    host.querySelectorAll('button[data-k="remove"]').forEach(function (el) { el.addEventListener("click", onWkwRemove); });
+  }
+  function onWkwEdit(e) {
+    var i = +e.target.dataset.i, k = e.target.dataset.k;
+    state.wkw.connections[i][k] = e.target.value;
+    // If editing name, try to auto-fill email from colleagues list.
+    if (k === "name") {
+      var match = null;
+      var n = (e.target.value || "").trim().toLowerCase();
+      for (var x = 0; x < state.users.length; x++) {
+        if ((state.users[x].name || "").toLowerCase() === n) { match = state.users[x]; break; }
+      }
+      if (match && match.email) {
+        state.wkw.connections[i].email = match.email;
+        var emailInput = e.target.closest(".wkw-row").querySelector('input[data-k="email"]');
+        if (emailInput) emailInput.value = match.email;
+      }
+    }
+  }
+  function onWkwScore(e) {
+    var i = +e.target.dataset.i, s = e.target.dataset.s;
+    state.wkw.connections[i].score = s;
+    renderWkw();
+  }
+  function onWkwRemove(e) {
+    state.wkw.connections.splice(+e.target.dataset.i, 1);
+    renderWkw();
+  }
+  document.getElementById("wkw-email").addEventListener("input", function (e) {
+    state.wkw.parentEmail = e.target.value;
+    document.getElementById("wkw-uuid").textContent = computeWkwUuid(state.wkw.parentEmail) || "—";
+  });
+  document.getElementById("btn-wkw-add").addEventListener("click", function () {
+    state.wkw.connections.push({ score: "1", name: "", email: "" });
+    renderWkw();
+    var last = document.querySelector('#wkw-rows .wkw-row:last-child input[data-k="name"]');
+    last && last.focus();
+  });
+  document.getElementById("btn-wkw-clear").addEventListener("click", function () {
+    state.wkw.connections = [];
+    renderWkw();
+    toast("Cleared");
+  });
+  document.getElementById("btn-wkw-generate").addEventListener("click", function () {
+    if (!state.users.length) { toast("Still loading colleagues—try again in a moment", true); return; }
+    var pickN = Math.min(4, state.users.length);
+    var shuffled = sampleN(state.users, pickN);
+    var scores = ["1","1","2","3"];
+    state.wkw.connections = shuffled.map(function (u, i) {
+      return { score: scores[i] || "2", name: u.name, email: u.email || "" };
+    });
+    renderWkw();
+    toast("Sample data generated");
+  });
+  document.getElementById("btn-wkw-copy").addEventListener("click", function () {
+    var u = computeWkwUuid(state.wkw.parentEmail);
+    if (!u) { toast("No email — nothing to copy", true); return; }
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(u).then(function () { toast("UUID copied"); }, function () { toast("Copy failed", true); });
+      } else { toast("UUID: " + u); }
+    } catch (e) { toast("UUID: " + u); }
+  });
+
+  // ---- Save ----
+  function buildScoreReasonsJson() {
+    return JSON.stringify({
+      version: 1.3,
+      explanation: state.reasons.map(function (r) {
+        return {
+          special: {
+            influence: r.influence ? 1 : 0,
+            value: r.value || "",
+            weight: 1.3,
+            ttValue: { special: { value: r.tooltip || "" } }
+          }
+        };
+      })
+    });
+  }
+
+  function buildMostContactedJson() {
+    var orgId = getOrgId();
+    var kpi = {
+      EntityId: ctx.entityId,
+      OrganizationId: orgId
+    };
+    // Build a fast lookup of valid contact ids. Account/opportunity records stay
+    // constrained to their directory; contact records only block self-reference.
+    var contactList = state.contacts || [];
+    var directoryReady = contactList.length > 0;
+    var isContactParent = (ctx.entityName || "").toLowerCase() === "contact";
+    var validContactIds = {};
+    contactList.forEach(function (p) { if (p.id) validContactIds[String(p.id).toLowerCase()] = true; });
+    var droppedContacts = 0;
+    function safeContactId(id) {
+      if (!id) return "";
+      if (isCurrentContactMostContactedId(id)) {
+        droppedContacts++;
+        return "";
+      }
+      if (isContactParent) return String(id).replace(/[{}]/g, "").toLowerCase();
+      if (!directoryReady) return id;
+      if (validContactIds[String(id).toLowerCase()]) return id;
+      droppedContacts++;
+      return "";
+    }
+    // NOTE: Sales Premium stores GUIDs (contactid / systemuserid) in these fields, not display names.
+    // The visual looks up the person to render the name/avatar. Empty string hides the slot.
+    state.mc.byUs.forEach(function (r, i) {
+      var j = i + 1;
+      var safeId = safeContactId(r.id);
+      kpi["McRelatedEntity"+j]       = safeId;
+      kpi["McNumberOfEmails"+j]      = safeId ? (r.emails || 0) : 0;
+      kpi["McNumberOfMeetings"+j]    = safeId ? (r.meetings || 0) : 0;
+      kpi["McNumberOfPhoneCalls"+j]  = safeId ? (r.phoneCalls || 0) : 0;
+    });
+    state.mc.byThem.forEach(function (r, i) {
+      var j = i + 1;
+      kpi["McByRelatedEntity"+j]      = r.id || "";
+      kpi["McByNumberOfEmails"+j]     = r.emails || 0;
+      kpi["McByNumberOfMeetings"+j]   = r.meetings || 0;
+      kpi["McByNumberOfPhoneCalls"+j] = r.phoneCalls || 0;
+    });
+    if (droppedContacts > 0) {
+      console.warn("[RA Setup] " + droppedContacts + " 'Most contacted' contact GUID(s) dropped — invalid for this record.");
+    }
+    return JSON.stringify({
+      EntityId: ctx.entityId,
+      OrganizationId: orgId,
+      EntityType: ctx.entityName,
+      KpiResponse: JSON.stringify(kpi)
+    });
+  }
+  // Returns true if the row has a valid YYYY-MM-DD date — anything else is
+  // dropped before we send to the server. Blank/garbled dates produce strings
+  // like "T00:00:00Z" that cause MS's UpdateKPIDemoData plugin to NRE on parse.
+  function isValidDayRow(r) {
+    if (!r || typeof r.day !== "string") return false;
+    return /^\d{4}-\d{2}-\d{2}$/.test(r.day.trim());
+  }
+  function validDayKpiRows() {
+    return (state.dayKpi || []).filter(isValidDayRow);
+  }
+  function buildDayKpiJson() {
+    var orgId = getOrgId();
+    var arr = validDayKpiRows().map(function (r) {
+      return {
+        Day: r.day + "T00:00:00Z",
+        EmailsReceived:    +r.emailsIn    || 0,
+        EmailsSent:        +r.emailsOut   || 0,
+        EntityId: ctx.entityId,
+        EntityType: ctx.entityName,
+        LinkedInEmailsSent: +r.liOut      || 0,
+        MeetingsReceived:  +r.meetingsIn  || 0,
+        MeetingsSent:      +r.meetingsOut || 0,
+        OrganizationId: orgId,
+        PhoneCallsMade:    +r.callsOut    || 0,
+        PhoneCallsReceived:+r.callsIn     || 0
+      };
+    });
+    return JSON.stringify({
+      EntityId: ctx.entityId,
+      OrganizationId: orgId,
+      EntityType: ctx.entityName,
+      KpiResponse: JSON.stringify(arr)
+    });
+  }
+
+  function buildWkwJson() {
+    var connections = state.wkw.connections.map(function (c) {
+      return {
+        ConnectionScore: String(c.score || "2"),
+        DisplayName: c.name || "",
+        EmailActivityId: null,
+        EmailAddress: c.email || "",
+        ExchangeRegion: null,
+        Image: "",
+        ResultId: "1"
+      };
+    });
+    // WKW is stored RAW (no Sales Premium envelope) — confirmed by inspecting a record
+    // that was last written by the OOB dialog. Wrapping it causes UpdateWKWDemoData to NRE.
+    return JSON.stringify({
+      Connections: connections,
+      Uuid: computeWkwUuid(state.wkw.parentEmail)
+    });
+  }
+
+  // ---- Lifetime KPIs ----
+  // The column msdyn_relationshipanalyticskpijson stores either a KPIJson envelope
+  // (account/contact/lead) OR an OpportunityKPIJson wrapper (opportunity), where
+  // OpportunityKPIJson.LifeTimeKpisResponse is the KPIJson and KpiResponse is the
+  // stringified LifeTimeKPIResponse payload. See decompiled SalesPremiumSampleData
+  // plugin (UpdateKPIDemoData) for the exact shapes.
+  var LIFE_FIELDS = [
+    ["emailsOut",    "f-life-emailsout",   "int"],
+    ["emailsIn",     "f-life-emailsin",    "int"],
+    ["meetingsOut",  "f-life-meetingsout", "int"],
+    ["meetingsIn",   "f-life-meetingsin",  "int"],
+    ["callsOut",     "f-life-callsout",    "int"],
+    ["callsIn",      "f-life-callsin",     "int"],
+    ["liOut",        "f-life-liout",       "int"],
+    ["faceTime",     "f-life-facetime",    "int"],
+    ["opened",       "f-life-opened",      "dec"],
+    ["clicks",       "f-life-clicks",      "dec"],
+    ["attach",       "f-life-attach",      "dec"],
+    ["rrThem",       "f-life-rrthem",      "dec"],
+    ["rrUs",         "f-life-rrus",        "dec"],
+    ["frtThem",      "f-life-frtthem",     "dec"],
+    ["frtUs",        "f-life-frtus",       "dec"]
+  ];
+  function isOpportunity() { return (ctx.entityName || "").toLowerCase() === "opportunity"; }
+  function hydrateLifetimeFromJson(text) {
+    if (!text) return;
+    try {
+      var outer = JSON.parse(text);
+      var env = outer;
+      if (isOpportunity() && outer && outer.LifeTimeKpisResponse) env = outer.LifeTimeKpisResponse;
+      var inner = (env && typeof env.KpiResponse === "string") ? JSON.parse(env.KpiResponse) : env;
+      if (!inner) return;
+      var l = state.lifetime;
+      function num(v) { return (v == null || v === "") ? null : (+v); }
+      l.emailsOut   = num(inner.EmailsSent);
+      l.emailsIn    = num(inner.EmailsReceived);
+      l.meetingsOut = num(inner.MeetingsSent);
+      l.meetingsIn  = num(inner.MeetingsReceived);
+      l.callsOut    = num(inner.PhoneCallsMade);
+      l.callsIn     = num(inner.PhoneCallsReceived);
+      l.liOut       = num(inner.LinkedInEmailsSent);
+      l.faceTime    = num(inner.FaceTimeWithCustomer);
+      l.opened      = num(inner.OpenedEmails);
+      l.clicks      = num(inner.LinksClicked);
+      l.attach      = num(inner.AttachmentsOpen);
+      l.rrThem      = num(inner.ResponseRateByThem);
+      l.rrUs        = num(inner.ResponseRateByUs);
+      l.frtThem     = num(inner.AverageFirstResponseTimeByThem);
+      l.frtUs       = num(inner.AverageFirstResponseTimeByUs);
+      // Prefer header value already loaded; fall back to inner if present.
+      if (state.lifetime.timeByTeam == null && inner.TimeSpentByTeam != null) state.lifetime.timeByTeam = +inner.TimeSpentByTeam;
+      if (isOpportunity() && outer && outer.SimilarEntityInfoResponse && outer.SimilarEntityInfoResponse.SimilarEntityResponse) {
+        var simRows = JSON.parse(outer.SimilarEntityInfoResponse.SimilarEntityResponse);
+        if (Array.isArray(simRows)) {
+          state.similarWon = blankSimilarRows(3);
+          simRows.slice(0, 3).forEach(function (row, idx) {
+            state.similarWon[idx] = {
+              id: row.EntityId || "",
+              name: row.EntityName || "",
+              totalActivities: +row.TotalActivities || 0,
+              calls: +row.PhoneCallsReceived || 0,
+              timeByTeam: +row.TimeSpentByTeam || 0,
+              faceTime: +row.FaceTimeWithCustomer || 0
+            };
+          });
+        }
+      }
+    } catch (e) { console.log("[RA Setup] could not parse msdyn_relationshipanalyticskpijson", e); }
+  }
+  function buildLifetimeInner() {
+    var l = state.lifetime || {};
+    function n(v, d) { var x = (v == null || v === "") ? d : +v; return isNaN(x) ? d : x; }
+    return {
+      EmailsSent:                     n(l.emailsOut, 0),
+      EmailsReceived:                 n(l.emailsIn, 0),
+      MeetingsSent:                   n(l.meetingsOut, 0),
+      MeetingsReceived:               n(l.meetingsIn, 0),
+      PhoneCallsMade:                 n(l.callsOut, 0),
+      PhoneCallsReceived:             n(l.callsIn, 0),
+      LinkedInEmailsSent:             n(l.liOut, 0),
+      OpenedEmails:                   n(l.opened, 0),
+      LinksClicked:                   n(l.clicks, 0),
+      AttachmentsOpen:                n(l.attach, 0),
+      ResponseRateByThem:             n(l.rrThem, 0),
+      ResponseRateByUs:               n(l.rrUs, 0),
+      AverageFirstResponseTimeByThem: n(l.frtThem, 0),
+      AverageFirstResponseTimeByUs:   n(l.frtUs, 0),
+      TimeSpentByTeam:                n(l.timeByTeam, 0),
+      FaceTimeWithCustomer:           n(l.faceTime, 0)
+    };
+  }
+  function buildSimilarEntityResponse() {
+    return (state.similarWon || []).filter(function (row) { return row && row.id; }).map(function (row, idx) {
+      function n(v) { var x = (v == null || v === "") ? 0 : +v; return isNaN(x) ? 0 : x; }
+      return {
+        EntityId: String(row.id).replace(/[{}]/g, "").toLowerCase(),
+        EntityName: row.name || "Won opportunity",
+        TotalActivities: n(row.totalActivities),
+        PhoneCallsReceived: n(row.calls),
+        TimeSpentByTeam: n(row.timeByTeam),
+        FaceTimeWithCustomer: n(row.faceTime),
+        ResponseRateByThem: n(row.responseRateByThem),
+        ResponseRateByUs: n(row.responseRateByUs),
+        AverageFirstResponseTimeByUs: n(row.averageFirstResponseTimeByUs),
+        AverageFirstResponseTimeByThem: n(row.averageFirstResponseTimeByThem),
+        TimeSpentByTeamWithLi: n(row.timeByTeamWithLi || row.timeByTeam),
+        FaceTimeWithCustomerWithLi: n(row.faceTimeWithLi || row.faceTime)
+      };
+    });
+  }
+  function buildSimilarImportantFeatureResponse() {
+    return JSON.stringify([
+      { feature_name: "opportunity_attr_estimatedvalue", weight: 0.36 },
+      { feature_name: "opportunity_attr_actualvalue", weight: 0.29 },
+      { feature_name: "opportunity_attr_budget", weight: 0.27 }
+    ]);
+  }
+  function buildLifetimeKpiJson() {
+    var orgId = getOrgId();
+    var inner = buildLifetimeInner();
+    var kpi = {
+      EntityId: ctx.entityId,
+      OrganizationId: orgId,
+      EntityType: ctx.entityName,
+      KpiResponse: JSON.stringify(inner)
+    };
+    if (isOpportunity()) {
+      // Opportunity column expects an OpportunityKPIJson with a non-null
+      // SimilarEntityInfoResponse — the plugin NREs without it.
+      var sim = {
+        EntityId: ctx.entityId,
+        OrganizationId: orgId,
+        EntityType: ctx.entityName,
+        SimilarEntityResponse: JSON.stringify(buildSimilarEntityResponse())
+      };
+      return JSON.stringify({
+        LifeTimeKpisResponse: kpi,
+        SimilarEntityImportantFeatureResponse: buildSimilarImportantFeatureResponse(),
+        SimilarEntityInfoResponse: sim
+      });
+    }
+    return JSON.stringify(kpi);
+  }
+  function renderLifetime() {
+    var l = state.lifetime || {};
+    function set(id, v) { var el = document.getElementById(id); if (el) el.value = (v == null ? "" : v); }
+    var sel;
+    sel = document.getElementById("f-life-state"); if (sel) sel.value = String(l.healthState != null ? l.healthState : 0);
+    sel = document.getElementById("f-life-trend"); if (sel) sel.value = String(l.healthTrend != null ? l.healthTrend : 0);
+    set("f-life-byteam", l.timeByTeam);
+    set("f-life-bycust", l.timeByCust);
+    LIFE_FIELDS.forEach(function (f) { set(f[1], l[f[0]]); });
+    bindLifetime();
+  }
+  function bindLifetime() {
+    var pane = document.querySelector('.pane[data-pane="life"]');
+    if (!pane || pane._bound) { return; }
+    pane._bound = true;
+    function readNum(id, kind) {
+      var el = document.getElementById(id);
+      if (!el) return null;
+      var v = el.value;
+      if (v === "" || v == null) return null;
+      var n = (kind === "int") ? parseInt(v, 10) : parseFloat(v);
+      return isNaN(n) ? null : n;
+    }
+    pane.addEventListener("input", function () {
+      var l = state.lifetime;
+      var head = document.getElementById("f-life-state");  if (head) l.healthState = parseInt(head.value, 10);
+      head     = document.getElementById("f-life-trend");  if (head) l.healthTrend = parseInt(head.value, 10);
+      l.timeByTeam = readNum("f-life-byteam", "int");
+      l.timeByCust = readNum("f-life-bycust", "int");
+      LIFE_FIELDS.forEach(function (f) { l[f[0]] = readNum(f[1], f[2]); });
+    });
+    pane.addEventListener("change", function () {
+      var l = state.lifetime;
+      var head = document.getElementById("f-life-state"); if (head) l.healthState = parseInt(head.value, 10);
+      head     = document.getElementById("f-life-trend"); if (head) l.healthTrend = parseInt(head.value, 10);
+    });
+    var btnGen = document.getElementById("btn-life-generate");
+    if (btnGen) btnGen.addEventListener("click", function () {
+      var l = state.lifetime;
+      l.healthState = 0; l.healthTrend = 1;
+      l.timeByTeam = 240; l.timeByCust = 90; l.faceTime = 60;
+      l.emailsOut = 42; l.emailsIn = 38;
+      l.meetingsOut = 6; l.meetingsIn = 5;
+      l.callsOut = 14; l.callsIn = 11;
+      l.liOut = 3;
+      l.opened = 0.78; l.clicks = 0.31; l.attach = 0.22;
+      l.rrThem = 0.65; l.rrUs = 0.81;
+      l.frtThem = 18.5; l.frtUs = 4.2;
+      state.dirty.lifetime = true;
+      state.jsonOverride.life = null;
+      var wrap = document.querySelector('.json-preview[data-jp="life"]'); if (wrap) wrap.classList.remove("dirty","invalid");
+      renderLifetime();
+      refreshJsonPreviews();
+      toast("Generated sample lifetime KPIs");
+    });
+    var btnClr = document.getElementById("btn-life-clear");
+    if (btnClr) btnClr.addEventListener("click", function () {
+      var l = state.lifetime;
+      ["timeByTeam","timeByCust","faceTime","emailsOut","emailsIn","meetingsOut","meetingsIn",
+       "callsOut","callsIn","liOut","opened","clicks","attach","rrThem","rrUs","frtThem","frtUs"]
+        .forEach(function (k) { l[k] = null; });
+      l.healthState = 0; l.healthTrend = 1;
+      state.dirty.lifetime = true;
+      state.jsonOverride.life = null;
+      var wrap = document.querySelector('.json-preview[data-jp="life"]'); if (wrap) wrap.classList.remove("dirty","invalid");
+      renderLifetime();
+      refreshJsonPreviews();
+      toast("Cleared lifetime KPIs");
+    });
+  }
+
+  // ---- Similar won deals (Opportunity only) ----
+  function loadWonOpportunities() {
+    if (!isOpportunity()) return;
+    var currentId = String(ctx.entityId || "").replace(/[{}]/g, "").toLowerCase();
+    var path = "opportunities?$select=opportunityid,name,actualvalue,estimatedvalue,actualclosedate"
+      + "&$filter=statecode eq 1 and opportunityid ne " + currentId
+      + "&$orderby=actualclosedate desc,modifiedon desc&$top=100";
+    function applyWonOpportunityResults(res) {
+      state.wonOpportunities = (res.value || []).map(function (o) {
+        return {
+          id: o.opportunityid,
+          name: o.name || "Won opportunity",
+          value: o.actualvalue != null ? o.actualvalue : o.estimatedvalue,
+          customer: ""
+        };
+      }).filter(function (o) { return o.id && o.name; });
+      populateWonOpportunityDatalist();
+      hydrateSimilarWonNames();
+      renderSimilarWon();
+      refreshSimilarWonMetrics();
+    }
+    webApiFetch("GET", path).then(function (res) {
+      applyWonOpportunityResults(res);
+    }, function (err) {
+      console.log("Failed to load won opportunities", err);
+      var fallback = "opportunities?$select=opportunityid,name,actualvalue,estimatedvalue"
+        + "&$filter=statecode eq 1&$orderby=modifiedon desc&$top=100";
+      webApiFetch("GET", fallback).then(function (res) {
+        applyWonOpportunityResults(res);
+      }, function (fallbackErr) {
+        console.log("Fallback won opportunities load failed", fallbackErr);
+        toast("Could not load won opportunities", true);
+      });
+    });
+  }
+  function populateWonOpportunityDatalist() {
+    var dl = document.getElementById("dl-won-opportunities");
+    if (!dl) return;
+    dl.innerHTML = state.wonOpportunities.map(function (o) {
+      var label = o.customer ? o.customer : (o.value != null ? String(o.value) : "");
+      return '<option value="' + esc(o.name) + '">' + esc(label) + '</option>';
+    }).join("");
+  }
+  function findWonOpportunityByName(name) {
+    if (!name) return null;
+    var n = name.trim().toLowerCase();
+    for (var i=0;i<state.wonOpportunities.length;i++) {
+      if ((state.wonOpportunities[i].name || "").toLowerCase() === n) return state.wonOpportunities[i];
+    }
+    return null;
+  }
+  function findWonOpportunityById(id) {
+    if (!id) return null;
+    var n = String(id).replace(/[{}]/g, "").toLowerCase();
+    for (var i=0;i<state.wonOpportunities.length;i++) {
+      if (String(state.wonOpportunities[i].id).replace(/[{}]/g, "").toLowerCase() === n) return state.wonOpportunities[i];
+    }
+    return null;
+  }
+  function hydrateSimilarWonNames() {
+    state.similarWon.forEach(function (row) {
+      if (row.id && !row.name) {
+        var match = findWonOpportunityById(row.id);
+        if (match) row.name = match.name;
+      }
+    });
+  }
+  function blankSimilarRow() {
+    return { id:"", name:"", totalActivities:0, calls:0, timeByTeam:0, faceTime:0, responseRateByThem:0, responseRateByUs:0, averageFirstResponseTimeByUs:0, averageFirstResponseTimeByThem:0, timeByTeamWithLi:0, faceTimeWithLi:0, metricsLoaded:false };
+  }
+  function markSimilarDirty() {
+    state.dirty.lifetime = true;
+    state.jsonOverride.life = null;
+    var wrap = document.querySelector('.json-preview[data-jp="life"]');
+    if (wrap) wrap.classList.remove("dirty", "invalid");
+    refreshJsonPreviews();
+  }
+  function resetSimilarMetrics(row) {
+    row.totalActivities = 0;
+    row.calls = 0;
+    row.timeByTeam = 0;
+    row.faceTime = 0;
+    row.responseRateByThem = 0;
+    row.responseRateByUs = 0;
+    row.averageFirstResponseTimeByUs = 0;
+    row.averageFirstResponseTimeByThem = 0;
+    row.timeByTeamWithLi = 0;
+    row.faceTimeWithLi = 0;
+    row.metricsLoaded = false;
+  }
+  function numberOrZero(v) {
+    var n = +v;
+    return isNaN(n) ? 0 : n;
+  }
+  function metricCell(value, loaded) {
+    var n = numberOrZero(value);
+    return '<div class="sim-metric' + (!loaded && n === 0 ? ' empty' : '') + '" title="Read from the selected opportunity KPI data">' + esc(String(Math.round(n))) + '</div>';
+  }
+  function metricsFromOpportunityKpi(item) {
+    var emails = numberOrZero(item.msdyn_emailssent) + numberOrZero(item.msdyn_emailsreceived);
+    var meetings = numberOrZero(item.msdyn_meetingssent) + numberOrZero(item.msdyn_meetingsreceived);
+    var calls = numberOrZero(item.msdyn_phonecallsmade) + numberOrZero(item.msdyn_phonecallsreceived);
+    return {
+      totalActivities: emails + meetings + calls,
+      calls: calls,
+      timeByTeam: numberOrZero(item.msdyn_timespentbyteam),
+      faceTime: numberOrZero(item.msdyn_facetimewithcustomer),
+      responseRateByThem: numberOrZero(item.msdyn_responseratebythem),
+      responseRateByUs: numberOrZero(item.msdyn_responseratebyus),
+      averageFirstResponseTimeByUs: Math.round(numberOrZero(item.msdyn_averagefirstresponsetimebyusinhrs) * 60),
+      averageFirstResponseTimeByThem: Math.round(numberOrZero(item.msdyn_averagefirstresponsetimebytheminhrs) * 60),
+      timeByTeamWithLi: numberOrZero(item.msdyn_timespentbyteam),
+      faceTimeWithLi: numberOrZero(item.msdyn_facetimewithcustomer),
+      metricsLoaded: true
+    };
+  }
+  function applySimilarMetrics(row, metrics) {
+    if (!metrics) { resetSimilarMetrics(row); return; }
+    Object.keys(metrics).forEach(function (key) { row[key] = metrics[key]; });
+  }
+  var similarMetricRequestId = 0;
+  function refreshSimilarWonMetrics() {
+    if (!isOpportunity()) return Promise.resolve();
+    var ids = (state.similarWon || []).map(function (row) {
+      return row && row.id ? String(row.id).replace(/[{}]/g, "").toLowerCase() : "";
+    }).filter(function (id) { return id && isValidGuid(id); });
+    if (!ids.length) return Promise.resolve();
+    var requestId = ++similarMetricRequestId;
+    var filter = ids.map(function (id) { return "_msdyn_opportunityid_value eq " + id; }).join(" or ");
+    var path = "msdyn_opportunitykpiitems?$select=msdyn_opportunitykpiitemid,_msdyn_opportunityid_value,msdyn_emailsreceived,msdyn_emailssent,msdyn_meetingsreceived,msdyn_meetingssent,msdyn_phonecallsmade,msdyn_phonecallsreceived,msdyn_timespentbyteam,msdyn_facetimewithcustomer,msdyn_responseratebythem,msdyn_responseratebyus,msdyn_averagefirstresponsetimebytheminhrs,msdyn_averagefirstresponsetimebyusinhrs,createdon"
+      + "&$filter=" + filter
+      + "&$orderby=createdon desc";
+    return webApiFetch("GET", path).then(function (res) {
+      if (requestId !== similarMetricRequestId) return;
+      var byOpportunity = {};
+      (res.value || []).forEach(function (item) {
+        var id = String(item._msdyn_opportunityid_value || "").replace(/[{}]/g, "").toLowerCase();
+        if (id && !byOpportunity[id]) byOpportunity[id] = metricsFromOpportunityKpi(item);
+      });
+      state.similarWon.forEach(function (row) {
+        if (!row || !row.id) return;
+        var id = String(row.id).replace(/[{}]/g, "").toLowerCase();
+        applySimilarMetrics(row, byOpportunity[id] || null);
+      });
+      renderSimilarWon();
+      markSimilarDirty();
+    }, function (err) {
+      console.log("Failed to load similar opportunity KPI metrics", err);
+    });
+  }
+  function renderSimilarWon() {
+    var host = document.getElementById("similar-rows");
+    if (!host) return;
+    host.innerHTML = "";
+    state.similarWon.forEach(function (row, idx) {
+      var el = document.createElement("div");
+      el.className = "sim-row";
+      el.innerHTML =
+        '<input type="text" list="dl-won-opportunities" placeholder="Start typing a won opportunity…" value="' + esc(row.name || "") + '" data-i="' + idx + '" data-k="name">' +
+        '<input type="text" class="guid" placeholder="00000000-0000-0000-0000-000000000000" value="' + esc(row.id || "") + '" data-i="' + idx + '" data-k="id">' +
+        metricCell(row.totalActivities, row.metricsLoaded) +
+        metricCell(row.calls, row.metricsLoaded) +
+        metricCell(row.timeByTeam, row.metricsLoaded) +
+        metricCell(row.faceTime, row.metricsLoaded) +
+        '<button type="button" class="btn danger" title="Clear row" data-i="' + idx + '" data-k="clear">×</button>';
+      host.appendChild(el);
+    });
+    host.querySelectorAll("input").forEach(function (input) {
+      input.addEventListener("input", onSimilarEdit);
+      input.addEventListener("change", onSimilarEdit);
+    });
+    host.querySelectorAll("button[data-k='clear']").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        state.similarWon[+btn.dataset.i] = blankSimilarRow();
+        markSimilarDirty();
+        renderSimilarWon();
+      });
+    });
+    var clear = document.getElementById("btn-sim-clear");
+    if (clear && !clear._bound) {
+      clear._bound = true;
+      clear.addEventListener("click", function () {
+        state.similarWon = blankSimilarRows(3);
+        markSimilarDirty();
+        renderSimilarWon();
+        toast("Cleared similar won deals");
+      });
+    }
+    var gen = document.getElementById("btn-sim-generate");
+    if (gen && !gen._bound) {
+      gen._bound = true;
+      gen.addEventListener("click", function () {
+        if (!state.wonOpportunities.length) { toast("Still loading won opportunities", true); return; }
+        state.similarWon = blankSimilarRows(3);
+        state.wonOpportunities.slice(0, 2).forEach(function (opp, idx) {
+          state.similarWon[idx] = {
+            id: opp.id,
+            name: opp.name,
+            totalActivities: 0,
+            calls: 0,
+            timeByTeam: 0,
+            faceTime: 0,
+            metricsLoaded: false
+          };
+        });
+        markSimilarDirty();
+        renderSimilarWon();
+        refreshSimilarWonMetrics();
+        toast("Picked sample won deals");
+      });
+    }
+  }
+  function onSimilarEdit(e) {
+    var row = state.similarWon[+e.target.dataset.i];
+    var key = e.target.dataset.k;
+    if (!row) return;
+    if (key === "name") {
+      row.name = e.target.value;
+      var match = findWonOpportunityByName(e.target.value);
+      if (match) {
+        row.id = match.id;
+        resetSimilarMetrics(row);
+        var idInput = e.target.closest(".sim-row").querySelector('input[data-k="id"]');
+        if (idInput) idInput.value = row.id;
+      } else {
+        row.id = "";
+        resetSimilarMetrics(row);
+        var blankIdInput = e.target.closest(".sim-row").querySelector('input[data-k="id"]');
+        if (blankIdInput) blankIdInput.value = "";
+      }
+    } else if (key === "id") {
+      row.id = (e.target.value || "").trim().replace(/[{}]/g, "").toLowerCase();
+      resetSimilarMetrics(row);
+      var match2 = findWonOpportunityById(row.id);
+      if (match2) {
+        row.name = match2.name;
+        var nameInput = e.target.closest(".sim-row").querySelector('input[data-k="name"]');
+        if (nameInput) nameInput.value = row.name;
+      }
+    }
+    markSimilarDirty();
+    if ((key === "name" || key === "id") && (!row.id || isValidGuid(row.id))) refreshSimilarWonMetrics();
+  }
+
+  // ---- Utilities tab ----
+  function setupUtilities() {
+    var datesCard = document.getElementById("util-card-dates");
+    if (datesCard && !isOpportunity()) {
+      datesCard.classList.add("disabled");
+      var s = document.getElementById("util-dates-status");
+      if (s) s.textContent = "Only available on opportunity records.";
+    }
+    var rollBtn = document.getElementById("btn-util-rolldates");
+    if (rollBtn) rollBtn.addEventListener("click", function () {
+      if (!isOpportunity()) { toast("Only available on opportunity records.", true); return; }
+      var daysEl = document.getElementById("util-dates-days");
+      var days = daysEl ? parseInt(daysEl.value, 10) : 30;
+      if (isNaN(days) || days < 0) { toast("Enter a valid number of days.", true); return; }
+      var status = document.getElementById("util-dates-status");
+      var target = new Date(); target.setDate(target.getDate() + days);
+      function pad(n){return (n<10?"0":"")+n;}
+      var iso = target.getFullYear()+"-"+pad(target.getMonth()+1)+"-"+pad(target.getDate());
+      rollBtn.disabled = true;
+      if (status) status.textContent = "Updating estimatedclosedate to " + iso + "\u2026";
+      Xrm.WebApi.updateRecord("opportunity", ctx.entityId, { estimatedclosedate: iso }).then(function () {
+        if (status) status.textContent = "Set estimatedclosedate to " + iso + ".";
+        rollBtn.disabled = false;
+        toast("Close date rolled forward " + days + " days");
+      }, function (err) {
+        rollBtn.disabled = false;
+        var msg = err && err.message ? err.message : String(err);
+        if (status) status.textContent = "Failed: " + msg;
+        toast("Failed: " + msg, true);
+      });
+    });
+    var wipeChk = document.getElementById("util-wipe-confirm");
+    var wipeBtn = document.getElementById("btn-util-wipe");
+    if (wipeChk && wipeBtn) {
+      wipeChk.addEventListener("change", function () { wipeBtn.disabled = !wipeChk.checked; });
+    }
+    if (wipeBtn) wipeBtn.addEventListener("click", function () {
+      if (!confirm("Delete the demo row and all related KPI / WKW / most-contacted child rows for this record, plus won-opportunity comparison KPI rows where applicable, then create a blank replacement row? This cannot be undone.")) return;
+      wipeAllDemoData();
+    });
+  }
+  function blankLifetimeState() {
+    return {
+      healthState: null, healthTrend: null, timeByTeam: null, timeByCust: null,
+      emailsOut: null, emailsIn: null,
+      meetingsOut: null, meetingsIn: null,
+      callsOut: null, callsIn: null,
+      liOut: null,
+      faceTime: null,
+      opened: null, clicks: null, attach: null,
+      rrThem: null, rrUs: null,
+      frtThem: null, frtUs: null
+    };
+  }
+  function resetToolStateAfterWipe() {
+    state.demoRecordId = null;
+    state.allDemoRecordIds = [];
+    state.head = { score: 0, grade: 0, trend: 0, scoredOn: "" };
+    state.reasons = [];
+    state.mc = { byUs: blankMcRows(3), byThem: blankMcRows(3) };
+    state.dayKpi = [];
+    state.wkw.connections = [];
+    state.similarWon = blankSimilarRows(3);
+    state.lifetime = blankLifetimeState();
+    state.dirty = { reasons: false, mc: false, dayKpi: false, wkw: false, lifetime: false };
+    state.jsonOverride = { reasons: null, mc: null, day: null, wkw: null, life: null };
+
+    var score = document.getElementById("f-score");
+    var grade = document.getElementById("f-grade");
+    var gradeOut = document.getElementById("f-grade-out");
+    var scoredOn = document.getElementById("f-scoredon");
+    if (score) score.value = "0";
+    if (grade) grade.value = "0";
+    if (gradeOut) gradeOut.textContent = GRADE_LABELS[0] || "";
+    if (scoredOn) scoredOn.value = "";
+    document.querySelectorAll(".trend button").forEach(function (b) { b.classList.toggle("on", +b.dataset.trend === 0); });
+
+    renderReasons();
+    renderMc();
+    renderDayKpi();
+    renderWkw();
+    renderLifetime();
+    renderSimilarWon();
+    document.querySelectorAll(".json-preview").forEach(function (wrap) { wrap.classList.remove("dirty", "invalid"); });
+    refreshJsonPreviews();
+  }
+  function wipeAllDemoData() {
+    var status = document.getElementById("util-wipe-status");
+    var btn = document.getElementById("btn-util-wipe");
+    if (btn) btn.disabled = true;
+    if (status) status.textContent = "Wiping\u2026";
+    var targets = buildWipeTargets();
+    runCleanupTargets(targets).then(function (deleted) {
+      resetToolStateAfterWipe();
+      return createBlankDemoPlaceholder().then(function () { return deleted; });
+    }).then(function (deleted) {
+      if (status) status.textContent = "Wiped " + deleted + " row(s) across " + targets.length + " target record(s) and created a blank replacement row for this record.";
+      var chk = document.getElementById("util-wipe-confirm");
+      if (chk) { chk.checked = false; }
+      if (btn) btn.disabled = true;
+      var saveBtn = document.getElementById("btn-save");
+      if (saveBtn) saveBtn.disabled = true;
+      setStatus("Demo data wiped. The native visual now has a blank row for this record.");
+      toast("Demo data wiped (" + deleted + " row(s))");
+    }, function (err) {
+      var chk = document.getElementById("util-wipe-confirm");
+      if (btn) btn.disabled = !(chk && chk.checked);
+      var msg = err && err.message ? err.message : String(err);
+      if (status) status.textContent = "Failed: " + msg;
+      toast("Failed: " + msg, true);
+    });
+  }
+  function buildWipeTargets() {
+    var seen = {};
+    var targets = [];
+    function add(id, type, wkwUuid) {
+      var normalizedId = String(id || "").replace(/[{}]/g, "").toLowerCase();
+      var normalizedType = String(type || "").toLowerCase();
+      var key = normalizedType + ":" + normalizedId;
+      if (!normalizedId || !normalizedType || seen[key]) return;
+      seen[key] = true;
+      targets.push({ id: normalizedId, type: normalizedType, wkwUuid: wkwUuid || "" });
+    }
+    add(ctx.entityId, ctx.entityName, computeWkwUuid(state.wkw && state.wkw.parentEmail) || "");
+    if (isOpportunity()) {
+      (state.similarWon || []).forEach(function (row) {
+        if (row && row.id) add(row.id, "opportunity", "");
+      });
+      (state.wonOpportunities || []).forEach(function (opp) {
+        if (opp && opp.id) add(opp.id, "opportunity", "");
+      });
+    }
+    return targets;
+  }
+  function runCleanupTargets(targets) {
+    var total = 0;
+    return (targets || []).reduce(function (chain, target) {
+      return chain.then(function () {
+        return cleanupRelationshipAnalyticsTarget(target.id, target.type, target.wkwUuid).then(function (deleted) {
+          total += deleted || 0;
+        });
+      });
+    }, Promise.resolve()).then(function () { return total; });
+  }
+
+  function createBlankDemoPlaceholder() {
+    var payload = buildPayload(true);
+    console.log("[RA Setup V3] POST blank placeholder after wipe", payload);
+    return Xrm.WebApi.createRecord("msdyn_salespremiumdemo", payload).then(function (created) {
+      state.demoRecordId = created && created.id ? created.id.replace(/[{}]/g, "") : "";
+      state.allDemoRecordIds = state.demoRecordId ? [state.demoRecordId] : [];
+      console.log("[RA Setup V3] blank placeholder CREATE ok", state.demoRecordId);
+      return created;
+    });
+  }
+
+  function addLookupBinding(payload) {
+    var bindMap = {
+      account:     { nav: "msdyn_Account",     set: "accounts" },
+      contact:     { nav: "msdyn_Contact",     set: "contacts" },
+      lead:        { nav: "msdyn_Lead",        set: "leads" },
+      opportunity: { nav: "msdyn_Opportunity", set: "opportunities" }
+    };
+    var bind = bindMap[(ctx.entityName || "").toLowerCase()];
+    if (bind && ctx.entityId) payload[bind.nav + "@odata.bind"] = "/" + bind.set + "(" + ctx.entityId.replace(/[{}]/g, "") + ")";
+    return payload;
+  }
+
+  function buildCorePayload() {
+    var ov = state.jsonOverride || {};
+    var p = addLookupBinding({
+      msdyn_entityid: ctx.entityId,
+      msdyn_entitytype: ctx.entityName,
+      msdyn_score: state.head.score,
+      msdyn_grade: state.head.grade,
+      msdyn_scoretrend: state.head.trend,
+      msdyn_scorereasons: (ov.reasons != null ? ov.reasons : buildScoreReasonsJson())
+    });
+    if (state.head.scoredOn) {
+      var localDt = new Date(state.head.scoredOn);
+      if (!isNaN(localDt.getTime())) p.msdyn_scoredon = localDt.toISOString();
+    }
+    return p;
+  }
+
+  function buildLifetimePayload() {
+    var ov = state.jsonOverride || {};
+    return {
+      msdyn_relationshiphealthscorestate: state.lifetime && state.lifetime.healthState != null ? +state.lifetime.healthState : 0,
+      msdyn_relationshiphealthtrend:      state.lifetime && state.lifetime.healthTrend != null ? +state.lifetime.healthTrend : 0,
+      msdyn_timespentbyteam:              state.lifetime && state.lifetime.timeByTeam  != null ? +state.lifetime.timeByTeam  : 120,
+      msdyn_timespentbycustomer:          state.lifetime && state.lifetime.timeByCust  != null ? +state.lifetime.timeByCust  : 60,
+      msdyn_relationshipanalyticskpijson: (ov.life != null ? ov.life : buildLifetimeKpiJson())
+    };
+  }
+
+  function buildMostContactedPayload() {
+    var ov = state.jsonOverride || {};
+    return { msdyn_mostcontacted: (ov.mc != null ? wrapWithEnvelope(ov.mc) : buildMostContactedJson()) };
+  }
+
+  function buildDayPayload() {
+    var ov = state.jsonOverride || {};
+    return { msdyn_relationshipanalyticsdaykpi: (ov.day != null ? wrapWithEnvelope(ov.day) : buildDayKpiJson()) };
+  }
+
+  function buildWkwPayload() {
+    var ov = state.jsonOverride || {};
+    var wkwText = (ov.wkw != null ? ov.wkw : buildWkwJson());
+    var wkwHasUuid = false;
+    try { wkwHasUuid = !!(JSON.parse(wkwText) || {}).Uuid; } catch (_) { wkwHasUuid = false; }
+    if (!wkwHasUuid) {
+      console.log("[RA Setup V3] Skipping msdyn_wkwjson — no Uuid (parent email missing).");
+      return null;
+    }
+    return { msdyn_wkwjson: wkwText };
+  }
+
+  function buildSavePlan(isNewRecord) {
+    var ov = state.jsonOverride || {};
+    var steps = [{ name: "core", payload: buildCorePayload(), cleanup: null }];
+    var lifeTouched = isNewRecord || state.dirty.lifetime || ov.life != null;
+    var mcTouched   = isNewRecord || state.dirty.mc       || ov.mc != null;
+    var dayTouched  = isNewRecord || state.dirty.dayKpi   || ov.day != null;
+    var wkwTouched  = isNewRecord || state.dirty.wkw      || ov.wkw != null;
+    if (lifeTouched) steps.push({ name: "lifetime", payload: buildLifetimePayload(), cleanup: null });
+    if (mcTouched) steps.push({ name: "most contacted", payload: buildMostContactedPayload(), cleanup: cleanupStaleMostContactedRows });
+    if (dayTouched) steps.push({ name: "day KPI", payload: buildDayPayload(), cleanup: cleanupStaleDailyKpiRows });
+    if (wkwTouched) {
+      var wkw = buildWkwPayload();
+      if (wkw) steps.push({ name: "who knows whom", payload: wkw, cleanup: cleanupStaleWkwRows });
+    }
+    return steps;
+  }
+
+  function buildPayload(isCreate) {
+    var merged = {};
+    buildSavePlan(!!isCreate).forEach(function (step) {
+      Object.keys(step.payload || {}).forEach(function (k) { merged[k] = step.payload[k]; });
+    });
+    return merged;
+  }
+
+  function runSaveSteps(recordId, steps) {
+    var results = [];
+    window.__lastSaveSteps = results;
+    return steps.reduce(function (chain, step) {
+      return chain.then(function () {
+        var started = new Date().toISOString();
+        console.log("[RA Setup V3] PATCH step", step.name, step.payload);
+        return Xrm.WebApi.updateRecord("msdyn_salespremiumdemo", recordId, step.payload).then(function () {
+          results.push({ name: step.name, status: "ok", started: started, finished: new Date().toISOString(), payload: step.payload });
+          if (!step.cleanup) return;
+          return step.cleanup().catch(function (err) {
+            console.warn("[RA Setup V3] cleanup failed after " + step.name, err);
+            results.push({ name: step.name + " cleanup", status: "warning", message: err && err.message ? err.message : String(err) });
+          });
+        }, function (err) {
+          results.push({ name: step.name, status: "failed", started: started, finished: new Date().toISOString(), payload: step.payload, message: err && err.message ? err.message : String(err) });
+          err._raStepName = step.name;
+          err._raStepPayload = step.payload;
+          throw err;
+        });
+      });
+    }, Promise.resolve());
+  }
+
+  function webApiFetch(method, path, body) {
+    var clientUrl = Xrm.Utility.getGlobalContext().getClientUrl();
+    var url = clientUrl + "/api/data/v9.2/" + path;
+    var headers = {
+      "Accept": "application/json",
+      "Content-Type": "application/json; charset=utf-8",
+      "OData-MaxVersion": "4.0",
+      "OData-Version": "4.0",
+      "Prefer": "return=representation"
+    };
+    return fetch(url, {
+      method: method,
+      headers: headers,
+      credentials: "include",
+      body: body ? JSON.stringify(body) : undefined
+    }).then(function (resp) {
+      if (!resp.ok) {
+        return resp.text().then(function (t) {
+          var msg = t;
+          try { var j = JSON.parse(t); msg = (j.error && j.error.message) || t; } catch (e) {}
+          throw new Error(msg);
+        });
+      }
+      if (resp.status === 204) return {};
+      return resp.json();
+    });
+  }
+
+  function deleteRowsByQuery(entitySetName, idKey, query, label) {
+    return webApiFetch("GET", entitySetName + query).then(function (res) {
+      var rows = (res && res.value) || [];
+      if (!rows.length) return 0;
+      console.log("[RA Setup V3] destructive cleanup: deleting " + rows.length + " row(s) from " + label, rows);
+      return rows.reduce(function (chain, row) {
+        return chain.then(function () {
+          return webApiFetch("DELETE", entitySetName + "(" + row[idKey] + ")").then(function () {
+            return 1;
+          }, function (err) {
+            var msg = err && err.message ? err.message : String(err);
+            if (/does\s*not\s*exist|0x80040217|404/i.test(msg)) return 0;
+            console.warn("[RA Setup V3] destructive cleanup delete failed for " + label + " " + row[idKey], err);
+            return 0;
+          });
+        });
+      }, Promise.resolve()).then(function () { return rows.length; });
+    }).catch(function (err) {
+      console.warn("[RA Setup V3] destructive cleanup query failed for " + label, err);
+      return 0;
+    });
+  }
+
+  function cleanupRelationshipAnalyticsTarget(entityId, entityType, wkwUuid) {
+    if (!entityId) return Promise.resolve(0);
+    var normalizedId = String(entityId || "").replace(/[{}]/g, "");
+    var normalizedType = String(entityType || "").toLowerCase();
+    var body = {
+      mjts_entityid: normalizedId,
+      mjts_entitytype: normalizedType,
+      mjts_wkwuuid: wkwUuid || ""
+    };
+
+    return webApiFetch("POST", "mjts_CleanupRelationshipAnalyticsDemoData", body).then(function (res) {
+      var deleted = res && res.mjts_deletedcount != null ? res.mjts_deletedcount : 0;
+      console.log("[RA Setup V3] server cleanup complete for " + normalizedType + " " + normalizedId + ", deleted " + deleted + " row(s)", res);
+      return deleted;
+    });
+  }
+
+  function deleteGeneratedRowsForCurrentRecord(includeParentRows) {
+    if (!ctx.entityId) return Promise.resolve(0);
+    return cleanupRelationshipAnalyticsTarget(
+      ctx.entityId,
+      ctx.entityName,
+      computeWkwUuid(state.wkw && state.wkw.parentEmail) || ""
+    ).then(function (deleted) {
+      state.demoRecordId = null;
+      state.allDemoRecordIds = [];
+      return deleted;
+    });
+  }
+
+  document.getElementById("btn-save").addEventListener("click", function () {
+    var saveBtn = document.getElementById("btn-save");
+    saveBtn.disabled = true;
+    setStatus("Saving…");
+    var dbgPane = document.getElementById("save-debug");
+    if (dbgPane) { dbgPane.hidden = true; dbgPane.textContent = ""; }
+
+    // The Microsoft sample-data plugin throws on Update/PATCH of KPI fields in
+    // this org, especially msdyn_relationshipanalyticsdaykpi. Recreate instead.
+    var payload = buildPayload(true);
+    var saveStage = "destructive pre-save cleanup";
+
+    var promise = deleteGeneratedRowsForCurrentRecord(true).then(function () {
+      saveStage = "create replacement row";
+      console.log("[RA Setup V3] POST recreate", payload);
+      return Xrm.WebApi.createRecord("msdyn_salespremiumdemo", payload).then(function (created) {
+        state.demoRecordId = created && created.id ? created.id.replace(/[{}]/g, "") : "";
+        state.allDemoRecordIds = state.demoRecordId ? [state.demoRecordId] : [];
+        console.log("[RA Setup V3] CREATE ok", state.demoRecordId);
+        return created;
+      });
+    });
+
+    promise = promise.then(function () {
+      saveStage = "post-save cleanup";
+      return cleanupStaleMostContactedRows().catch(function (err) {
+        console.warn("[RA Setup V3] Most contacted cleanup failed", err);
+      }).then(function () {
+        return cleanupStaleWkwRows().catch(function (err) {
+          console.warn("[RA Setup V3] WKW cleanup failed", err);
+        });
+      }).then(function () {
+        return cleanupStaleDailyKpiRows().catch(function (err) {
+          console.warn("[RA Setup V3] Day KPI cleanup failed", err);
+        });
+      });
+    }, function (err) {
+      var originalErr = err;
+      saveStage = saveStage + " (cleanup after failure)";
+      return deleteGeneratedRowsForCurrentRecord(false).catch(function (cleanupErr) {
+        console.warn("[RA Setup V3] failure cleanup failed", cleanupErr);
+      }).then(function () {
+        throw originalErr;
+      });
+    });
+
+    promise.then(function () {
+      setStatus("Saved " + new Date().toLocaleTimeString());
+      toast("Saved");
+      saveBtn.disabled = false;
+    }, function (err) {
+      // Surface the deepest server error message we can find — Dataverse often
+      // wraps the real plugin exception two or three levels deep.
+      var details = extractServerErrorDetails(err);
+      console.log("Save failed", err, "details:", details);
+      setStatus("Save failed");
+      toast("Save failed: " + details, true);
+      // Persist full error context so we can inspect after the toast vanishes.
+      var dbg = {
+        when: new Date().toISOString(),
+        details: details,
+        message: err && err.message,
+        status: err && err.status,
+        saveStage: saveStage,
+        stack: err && err.stack,
+        raw: (function(){ try { return JSON.parse(err && err.message); } catch (_) { return null; } }),
+        payload: payload
+      };
+      try { dbg.raw = JSON.parse(err && err.message); } catch (_) { dbg.raw = null; }
+      window.__lastSaveError = dbg;
+      var pane = document.getElementById("save-debug");
+      if (pane) {
+        pane.hidden = false;
+        pane.textContent = "[RA Setup] SAVE FAILED — " + dbg.when + "\n\n"
+          + "DETAILS: " + details + "\n\n"
+            + "SAVE STAGE:\n" + saveStage + "\n\n"
+            + "RAW MESSAGE:\n" + (err && err.message ? err.message : "(none)") + "\n\n"
+            + "SAVE MODE:\nDelete existing rows, then create one full replacement row\n\n"
+            + "PAYLOAD PREVIEW:\n" + JSON.stringify(payload, null, 2);
+      }
+      saveBtn.disabled = false;
+    });
+  });
+
+  function extractServerErrorDetails(err) {
+    if (!err) return "unknown";
+    // Xrm.WebApi rejects with an Error whose .message is a JSON string sometimes.
+    var msg = err.message || String(err);
+    try {
+      var j = JSON.parse(msg);
+      var inner = j && j.error;
+      var deepest = inner && (inner.innererror || inner);
+      while (deepest && deepest.innererror) deepest = deepest.innererror;
+      if (deepest && deepest.message) return deepest.message;
+      if (inner && inner.message) return inner.message;
+    } catch (_) { /* not JSON */ }
+    return msg;
+  }
+
+  function cleanupStaleWkwRows() {
+    // Only run if we have a parent email / UUID; otherwise there's nothing to match against.
+    var uuid = computeWkwUuid(state.wkw && state.wkw.parentEmail);
+    if (!uuid) return Promise.resolve();
+    // Keep set: lowercased emails of connections currently in the tool.
+    var keep = {};
+    (state.wkw.connections || []).forEach(function (c) {
+      var em = (c.email || "").trim().toLowerCase();
+      if (em) keep[em] = true;
+    });
+    var sets = ["msdyn_wkwcolleaguesforcontact", "msdyn_wkwcolleaguesforcompany"];
+    return Promise.all(sets.map(function (logical) {
+      var q = "?$select=msdyn_introducer_emailaddress&$filter=msdyn_introduced_entity_id eq '" + uuid + "'";
+      return Xrm.WebApi.retrieveMultipleRecords(logical, q).then(function (res) {
+        var stale = (res.entities || []).filter(function (r) {
+          var em = (r.msdyn_introducer_emailaddress || "").trim().toLowerCase();
+          return em && !keep[em];
+        });
+        if (!stale.length) return;
+        console.log("[RA Setup] Removing " + stale.length + " stale row(s) from " + logical, stale);
+        var idKey = logical + "id";
+        return Promise.all(stale.map(function (r) {
+          return Xrm.WebApi.deleteRecord(logical, r[idKey]).catch(function (err) {
+            console.warn("[RA Setup] Delete failed for " + logical + " " + r[idKey], err);
+          });
+        }));
+      }).catch(function (err) {
+        // Entity may not exist in this org, or user may lack read privilege — skip silently.
+        console.warn("[RA Setup] Query " + logical + " failed", err);
+      });
+    }));
+  }
+
+  function cleanupStaleMostContactedRows() {
+    if (!ctx.entityId) return Promise.resolve();
+    var keepContacts = {};
+    var keepUsers = {};
+    try {
+      var env = JSON.parse(buildMostContactedPayload().msdyn_mostcontacted || "{}");
+      var kpi = env && env.KpiResponse ? JSON.parse(env.KpiResponse) : {};
+      for (var i = 1; i <= 3; i++) {
+        var contactId = kpi["McRelatedEntity" + i];
+        var userId = kpi["McByRelatedEntity" + i];
+        if (contactId) keepContacts[String(contactId).toLowerCase()] = true;
+        if (userId) keepUsers[String(userId).toLowerCase()] = true;
+      }
+    } catch (e) {
+      console.warn("[RA Setup V3] Most contacted cleanup skipped: could not parse current payload", e);
+      return Promise.resolve();
+    }
+    var regardingId = ctx.entityId.replace(/[{}]/g, "").replace(/'/g, "''");
+    function cleanSet(logical, idKey, keep) {
+      var q = "?$select=" + idKey + ",msdyn_entityid&$filter=msdyn_regardingentityid eq '" + regardingId + "'";
+      return Xrm.WebApi.retrieveMultipleRecords(logical, q).then(function (res) {
+        var stale = (res.entities || []).filter(function (row) {
+          var entityId = String(row.msdyn_entityid || "").toLowerCase();
+          return entityId && !keep[entityId];
+        });
+        if (!stale.length) return;
+        console.log("[RA Setup V3] Most contacted cleanup: removing " + stale.length + " stale row(s) from " + logical, stale);
+        return Promise.all(stale.map(function (row) {
+          return Xrm.WebApi.deleteRecord(logical, row[idKey]).catch(function (err) {
+            console.warn("[RA Setup V3] Most contacted cleanup delete failed for " + logical + " " + row[idKey], err);
+          });
+        }));
+      }).catch(function (err) {
+        console.warn("[RA Setup V3] Most contacted cleanup query failed for " + logical, err);
+      });
+    }
+    return Promise.all([
+      cleanSet("msdyn_mostcontacted", "msdyn_mostcontactedid", keepContacts),
+      cleanSet("msdyn_mostcontactedby", "msdyn_mostcontactedbyid", keepUsers)
+    ]);
+  }
+
+  function cleanupStaleDailyKpiRows() {
+    // The MS UpdateKPIDemoData plugin only Upserts the days listed in the saved JSON;
+    // it never deletes daily rows for days the user removed. Reconcile by deleting any
+    // msdyn_daily<entity>kpiitem rows whose msdyn_date isn't in our current list.
+    var en = (ctx.entityName || "").toLowerCase();
+    var raEntities = { account:1, contact:1, lead:1, opportunity:1 };
+    if (!raEntities[en] || !ctx.entityId) return Promise.resolve();
+    if (!state.dirty.dayKpi) return Promise.resolve();
+    var logical = "msdyn_daily" + en + "kpiitem";
+    var parentField = "msdyn_" + en + "id";
+    var idKey = logical + "id";
+    var keep = {};
+    (state.dayKpi || []).forEach(function (r) { if (r && r.day) keep[r.day] = true; });
+    var pid = ctx.entityId.replace(/[{}]/g, "").replace(/'/g, "''");
+    // The parent column on these daily-KPI tables is a STRING (e.g. msdyn_opportunityid),
+    // not a typed lookup, so use string equality with quotes — NOT _<lookup>_value.
+    var q = "?$select=msdyn_date&$filter=" + parentField + " eq '" + pid + "'";
+    return Xrm.WebApi.retrieveMultipleRecords(logical, q).then(function (res) {
+      var rows = res.entities || [];
+      var stale = rows.filter(function (r) {
+        if (!r.msdyn_date) return false;
+        var iso = String(r.msdyn_date).slice(0, 10);
+        return !keep[iso];
+      });
+      if (!stale.length) {
+        console.log("[RA Setup] Day KPI cleanup: nothing stale (" + rows.length + " total, " + Object.keys(keep).length + " kept)");
+        return;
+      }
+      console.log("[RA Setup] Day KPI cleanup: removing " + stale.length + " stale row(s) from " + logical, stale.map(function(r){return r.msdyn_date;}));
+      // Sequential to avoid the MS plugin tripping over concurrent deletes.
+      return stale.reduce(function (chain, r) {
+        return chain.then(function () {
+          return Xrm.WebApi.deleteRecord(logical, r[idKey]).then(function () {
+            console.log("[RA Setup] Day KPI DELETE ok", r.msdyn_date, r[idKey]);
+          }, function (err) {
+            var msg = err && err.message ? err.message : String(err);
+            if (/does\s*not\s*exist|0x80040217|404/i.test(msg)) {
+              console.warn("[RA Setup] Day KPI DELETE: " + r[idKey] + " already gone");
+              return;
+            }
+            console.warn("[RA Setup] Day KPI DELETE failed for " + r[idKey], err);
+          });
+        });
+      }, Promise.resolve());
+    }).catch(function (err) {
+      console.warn("[RA Setup] Day KPI query " + logical + " failed", err);
+    });
+  }
+
+  document.getElementById("btn-cancel").addEventListener("click", function () {
+    try { window.close(); } catch (e) {}
+    // If running inside navigateTo (target:2), the host closes the dialog.
+  });
+
+  bootstrap();
+})();
+</script>
+</body>
+</html>
