@@ -7,6 +7,8 @@ Dataverse web resources for configuring mock Sales Premium / Relationship Analyt
 - `WebResources/mjts_ra_setup_v3.html` - main setup modal web resource.
 - `WebResources/mjts_ra_setup_v3_ribbon.js` - command bar JavaScript entry point.
 - `preview/ra-setup-v3-preview.html` - standalone browser preview for the setup experience.
+- `solutions/RelationshipAnalyticsConfigV3_unmanaged.zip` - unmanaged Dataverse solution export for makers/developers who want to inspect or modify the solution.
+- `solutions/RelationshipAnalyticsConfigV3_managed.zip` - managed Dataverse solution export for installing into another environment.
 
 ## What It Does
 
@@ -17,3 +19,11 @@ Dataverse web resources for configuring mock Sales Premium / Relationship Analyt
 ## Notes
 
 This repository contains only the web resource and preview files. Dataverse environment connection details are intentionally excluded from source control.
+
+## Installing The Solution
+
+Use the managed ZIP for normal installation into another Dataverse environment. Import it through Power Apps maker portal or your ALM tooling.
+
+Use the unmanaged ZIP only when you want to continue development or inspect/customize the components in a development environment.
+
+The target environment should already include the Sales Hub / Sales Premium Relationship Analytics tables used by the tool.
