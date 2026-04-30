@@ -352,7 +352,7 @@
         </div>
       </div>
       <div id="wkw-skip-warning" class="hint" style="color:#a40;display:none;margin:6px 0 10px">No parent email — Who-knows-whom data will <b>not</b> be saved (Microsoft's plugin requires a UUID derived from the record's email).</div>
-      <div class="wkw-hdr"><div>Connection score</div><div>Display name</div><div>Email address</div><div></div></div>
+      <div class="wkw-hdr"><div>Connection score</div><div>Display name</div><div>User identifier</div><div></div></div>
       <div id="wkw-rows"></div>
       <div id="wkw-empty" class="empty" hidden>No connections yet. Click <b>+ Add connection</b> or <b>Generate sample data</b>.</div>
       <datalist id="dl-wkw-users"></datalist>
@@ -857,8 +857,10 @@
       // selections, but this keeps the picker usable.
       contactsQ = "contacts?$select=contactid,fullname,firstname,lastname&$filter=statecode eq 0 and fullname ne null&$orderby=modifiedon desc&$top=200";
     }
-    // Users: active non-app users, top 100
-    var usersQ = "systemusers?$select=fullname,firstname,lastname,internalemailaddress&$filter=isdisabled eq false and applicationid eq null and accessmode ne 3 and fullname ne null&$orderby=fullname asc&$top=100";
+    // Users: active non-app users, top 100. WKW's first-party plugin resolves
+    // connection users through domainname in some environments, even when the UI
+    // naturally shows internalemailaddress.
+    var usersQ = "systemusers?$select=fullname,firstname,lastname,internalemailaddress,domainname&$filter=isdisabled eq false and applicationid eq null and accessmode ne 3 and fullname ne null&$orderby=fullname asc&$top=100";
     peopleLoadPromise = Promise.all([
       webApiFetch("GET", contactsQ),
       webApiFetch("GET", usersQ)
@@ -878,7 +880,12 @@
         contactsRaw = res[0];
       }
       state.contacts = (contactsRaw.value || []).map(function (c) { return { id: c.contactid, name: c.fullname || ((c.firstname||"") + " " + (c.lastname||"")).trim() }; }).filter(function (p) { return p.id && p.name; });
-      state.users    = (res[1].value || []).map(function (u) { return { id: u.systemuserid, name: u.fullname || ((u.firstname||"") + " " + (u.lastname||"")).trim(), email: u.internalemailaddress || "" }; }).filter(function (p) { return p.id && p.name; });
+      state.users    = (res[1].value || []).map(function (u) {
+        var name = u.fullname || ((u.firstname||"") + " " + (u.lastname||"")).trim();
+        var email = u.internalemailaddress || "";
+        var domainName = u.domainname || "";
+        return { id: u.systemuserid, name: name, email: email, domainName: domainName, wkwEmail: domainName || email };
+      }).filter(function (p) { return p.id && p.name; });
       var seenContacts = {};
       state.contacts.forEach(function (p) { seenContacts[String(p.id).toLowerCase()] = true; });
       function addContacts(records) {
@@ -927,6 +934,10 @@
         }
         hydrate(state.mc.byUs,   state.contacts);
         hydrate(state.mc.byThem, state.users);
+        if (normalizeWkwConnectionsFromDirectory()) {
+          renderWkw();
+          try { refreshJsonPreviews(); } catch (e) {}
+        }
         sanitizeMostContactedSelfReferences(false);
         // If any saved row still can't resolve its id, fetch that person directly so we at least show the name.
         var missing = [];
@@ -1143,7 +1154,34 @@
     if (dlC) dlC.innerHTML = state.contacts.map(function (p) { return '<option value="' + esc(p.name) + '"></option>'; }).join("");
     if (dlU) dlU.innerHTML = state.users.map(function (p) { return '<option value="' + esc(p.name) + '"></option>'; }).join("");
     var dlW = document.getElementById("dl-wkw-users");
-    if (dlW) dlW.innerHTML = state.users.map(function (p) { return '<option value="' + esc(p.name) + '">' + esc(p.email || "") + '</option>'; }).join("");
+    if (dlW) dlW.innerHTML = state.users.map(function (p) { return '<option value="' + esc(p.name) + '">' + esc(p.wkwEmail || p.email || "") + '</option>'; }).join("");
+  }
+
+  function normalizeWkwConnectionsFromDirectory() {
+    if (!state.users || !state.users.length || !state.wkw || !state.wkw.connections) return 0;
+    var changed = 0;
+    function norm(s) { return String(s || "").trim().toLowerCase(); }
+    function findUser(row) {
+      var name = norm(row && row.name);
+      var email = norm(row && row.email);
+      for (var i = 0; i < state.users.length; i++) {
+        var u = state.users[i];
+        if (name && norm(u.name) === name) return u;
+        if (email && (norm(u.email) === email || norm(u.wkwEmail) === email || norm(u.domainName) === email)) return u;
+      }
+      return null;
+    }
+    state.wkw.connections.forEach(function (row) {
+      var user = findUser(row);
+      var safeIdentifier = user ? (user.wkwEmail || user.email || "") : "";
+      if (safeIdentifier && row.email !== safeIdentifier) {
+        row.name = user.name || row.name || "";
+        row.email = safeIdentifier;
+        changed++;
+      }
+    });
+    if (changed) console.log("[RA Setup] Normalized " + changed + " WKW connection identifier(s) from the user directory.");
+    return changed;
   }
   function renderMc() {
     renderMcGroup("mc-by-us", state.mc.byUs, "byUs", "dl-contacts");
@@ -1444,7 +1482,7 @@
           ["1","2","3"].map(function (s) { return '<button type="button" data-s="'+s+'" data-i="'+i+'" data-k="score" class="'+(c.score===s?"on":"")+'">'+WKW_SCORE_LBL[s]+'</button>'; }).join("") +
         '</div>' +
         '<input type="text" list="dl-wkw-users" placeholder="Full name" value="'+esc(c.name)+'" data-i="'+i+'" data-k="name">' +
-        '<input type="email" placeholder="name@contoso.com" value="'+esc(c.email)+'" data-i="'+i+'" data-k="email">' +
+        '<input type="text" placeholder="Domain name or sign-in" value="'+esc(c.email)+'" data-i="'+i+'" data-k="email">' +
         '<button class="btn danger" title="Remove" aria-label="Remove" data-i="'+i+'" data-k="remove">✕</button>';
       host.appendChild(row);
     });
@@ -1456,17 +1494,17 @@
   function onWkwEdit(e) {
     var i = +e.target.dataset.i, k = e.target.dataset.k;
     state.wkw.connections[i][k] = e.target.value;
-    // If editing name, try to auto-fill email from colleagues list.
+    // If editing name, auto-fill the identifier the WKW plugin can resolve.
     if (k === "name") {
       var match = null;
       var n = (e.target.value || "").trim().toLowerCase();
       for (var x = 0; x < state.users.length; x++) {
         if ((state.users[x].name || "").toLowerCase() === n) { match = state.users[x]; break; }
       }
-      if (match && match.email) {
-        state.wkw.connections[i].email = match.email;
+      if (match && (match.wkwEmail || match.email)) {
+        state.wkw.connections[i].email = match.wkwEmail || match.email;
         var emailInput = e.target.closest(".wkw-row").querySelector('input[data-k="email"]');
-        if (emailInput) emailInput.value = match.email;
+        if (emailInput) emailInput.value = state.wkw.connections[i].email;
       }
     }
   }
@@ -1499,8 +1537,8 @@
     var pickN = Math.min(4, state.users.length);
     var shuffled = sampleN(state.users, pickN);
     var scores = ["1","1","2","3"];
-    state.wkw.connections = shuffled.map(function (u, i) {
-      return { score: scores[i] || "2", name: u.name, email: u.email || "" };
+    state.wkw.connections = shuffled.filter(function (u) { return !!(u.wkwEmail || u.email); }).map(function (u, i) {
+      return { score: scores[i] || "2", name: u.name, email: u.wkwEmail || u.email || "" };
     });
     renderWkw();
     toast("Sample data generated");
@@ -1621,17 +1659,37 @@
   }
 
   function buildWkwJson() {
+    var dropped = 0;
+    function norm(s) { return String(s || "").trim().toLowerCase(); }
+    function findWkwUser(c) {
+      var name = norm(c && c.name);
+      var email = norm(c && c.email);
+      for (var i = 0; i < state.users.length; i++) {
+        var u = state.users[i];
+        if (name && norm(u.name) === name) return u;
+        if (email && (norm(u.email) === email || norm(u.wkwEmail) === email || norm(u.domainName) === email)) return u;
+      }
+      return null;
+    }
     var connections = state.wkw.connections.map(function (c) {
+      var user = findWkwUser(c);
+      var emailAddress = user ? (user.wkwEmail || user.email || "") : "";
+      if (!emailAddress) {
+        dropped++;
+        return null;
+      }
       return {
         ConnectionScore: String(c.score || "2"),
-        DisplayName: c.name || "",
+        DisplayName: (user && user.name) || c.name || "",
         EmailActivityId: null,
-        EmailAddress: c.email || "",
+        EmailAddress: emailAddress,
         ExchangeRegion: null,
         Image: "",
         ResultId: "1"
       };
-    });
+    }).filter(function (c) { return !!c; });
+    state._lastWkwDropped = dropped;
+    if (dropped) console.warn("[RA Setup] Dropped " + dropped + " WKW connection(s) that could not be resolved to an active system user.");
     // WKW is stored RAW (no Sales Premium envelope) — confirmed by inspecting a record
     // that was last written by the OOB dialog. Wrapping it causes UpdateWKWDemoData to NRE.
     return JSON.stringify({
@@ -2307,6 +2365,9 @@
   function buildWkwPayload() {
     var ov = state.jsonOverride || {};
     var wkwText = (ov.wkw != null ? ov.wkw : buildWkwJson());
+    if (ov.wkw == null && state._lastWkwDropped > 0) {
+      toast("Skipped " + state._lastWkwDropped + " unresolved WKW connection(s)", true);
+    }
     var wkwHasUuid = false;
     try { wkwHasUuid = !!(JSON.parse(wkwText) || {}).Uuid; } catch (_) { wkwHasUuid = false; }
     if (!wkwHasUuid) {
@@ -2455,10 +2516,15 @@
 
     // The Microsoft sample-data plugin throws on Update/PATCH of KPI fields in
     // this org, especially msdyn_relationshipanalyticsdaykpi. Recreate instead.
-    var payload = buildPayload(true);
+    // Wait for the people directory so WKW can resolve selected colleagues to
+    // the identifier the Microsoft plugin expects across form, grid, and Focused View launches.
+    var payload = null;
     var saveStage = "destructive pre-save cleanup";
 
-    var promise = deleteGeneratedRowsForCurrentRecord(true).then(function () {
+    var promise = loadPeople().then(function () {
+      payload = buildPayload(true);
+      return deleteGeneratedRowsForCurrentRecord(true);
+    }).then(function () {
       saveStage = "create replacement row";
       console.log("[RA Setup V3] POST recreate", payload);
       return Xrm.WebApi.createRecord("msdyn_salespremiumdemo", payload).then(function (created) {
