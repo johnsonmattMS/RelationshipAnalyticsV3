@@ -1,6 +1,7 @@
 # Relationship Analytics Setup V3
 
 Dataverse web resources for configuring mock Sales Premium / Relationship Analytics data from a Dynamics 365 command bar button.
+Once the solution is installed you'll find the tool in the far right side of the command ribbon for Lead/Contact/Opp/Account records.
 
 ## Contents
 
